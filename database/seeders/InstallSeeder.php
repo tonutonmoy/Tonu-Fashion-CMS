@@ -13,6 +13,7 @@ class InstallSeeder extends Seeder
             CourierSeeder::class,
             PaymentSeeder::class,
             ThemeSeeder::class,
+            DemoCatalogSeeder::class,
         ]);
     }
 }
