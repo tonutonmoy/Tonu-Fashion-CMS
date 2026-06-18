@@ -2,7 +2,10 @@
 
 namespace App\Console\Commands;
 
+use App\Enums\RecordStatus;
+use App\Models\Product;
 use App\Services\HomepageBuilderService;
+use App\Services\ProductPageService;
 use App\Services\StorefrontCacheService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Artisan;
@@ -67,6 +70,17 @@ class WarmStorefrontCacheCommand extends Command
             'gtm' => setting('gtm_container_id'),
         ]);
         $this->line('  storefront.marketing');
+
+        $productSlugs = Product::query()
+            ->where('status', RecordStatus::Active)
+            ->orderByDesc('featured')
+            ->latest()
+            ->limit(12)
+            ->pluck('slug')
+            ->all();
+
+        app(ProductPageService::class)->warmSlugs($productSlugs);
+        $this->line('  product.pages ('.count($productSlugs).')');
 
         if ($this->option('views')) {
             Artisan::call('view:cache');

@@ -1,6 +1,6 @@
 @props(['product'])
 
-<a href="{{ route('products.show', $product->slug) }}" class="group card overflow-hidden hover:shadow-md transition-shadow">
+<a href="{{ route('products.show', $product->slug) }}" class="group card overflow-hidden hover:shadow-md transition-shadow" data-turbo-preload>
     <div class="aspect-[3/4] bg-gray-100 overflow-hidden relative">
         @if($product->primary_image)
             <img src="{{ image_url($product->primary_image) }}" alt="{{ $product->name }}" loading="lazy" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">

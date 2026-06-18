@@ -7,11 +7,14 @@ use App\Http\Requests\ReviewRequest;
 use App\Models\Category;
 use App\Models\Product;
 use App\Repositories\Contracts\ProductRepositoryInterface;
+use App\Services\ProductPageService;
 use App\Services\ReviewService;
 use App\Services\SeoService;
 use App\Services\WishlistService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\View\View;
 
 class ProductController extends Controller
@@ -20,6 +23,7 @@ class ProductController extends Controller
 
     public function __construct(
         private ProductRepositoryInterface $products,
+        private ProductPageService $productPage,
         private SeoService $seo,
         private WishlistService $wishlist,
         private ReviewService $reviews
@@ -27,15 +31,25 @@ class ProductController extends Controller
 
     public function show(string $slug): View
     {
-        $product = $this->products->findBySlug($slug);
+        $product = $this->productPage->findForShow($slug);
 
-        if (! $product || $product->status->value !== 'active') {
+        if (! $product) {
             abort(404);
         }
 
+        $eventId = Cache::remember(
+            'product.view_event.'.$product->id.'.'.session()->getId(),
+            300,
+            fn () => (string) \Illuminate\Support\Str::uuid()
+        );
+
+        dispatch(function () use ($product) {
+            app(\App\Services\MarketingEventService::class)->trackViewContent($product);
+        })->afterResponse();
+
         return $this->themeView('product', [
             'product' => $product,
-            'relatedProducts' => $this->products->getRelated($product, 8),
+            'productSlug' => $slug,
             'inWishlist' => $this->wishlist->has($product),
             'seo' => $this->seo->productMeta($product),
             'marketingProduct' => [
@@ -43,7 +57,20 @@ class ProductController extends Controller
                 'name' => $product->name,
                 'price' => (float) $product->effective_price,
             ],
-            'viewContentEventId' => app(\App\Services\MarketingEventService::class)->trackViewContent($product)['event_id'] ?? null,
+            'viewContentEventId' => $eventId,
+        ]);
+    }
+
+    public function related(string $slug): JsonResponse
+    {
+        $product = $this->productPage->findForShow($slug);
+
+        if (! $product) {
+            abort(404);
+        }
+
+        return response()->json([
+            'html' => $this->productPage->relatedHtml($product),
         ]);
     }
 

@@ -23,8 +23,9 @@ class ProductRepository extends BaseRepository implements ProductRepositoryInter
     {
         return Cache::remember("product.show.{$slug}", app(StorefrontCacheService::class)->ttl(), function () use ($slug) {
             return $this->model->newQuery()
-                ->with(['images', 'variants', 'category', 'brand', 'approvedReviews.user:id,name'])
+                ->with(['images', 'variants', 'category:id,name,slug', 'brand:id,name,slug'])
                 ->where('slug', $slug)
+                ->where('status', RecordStatus::Active)
                 ->first();
         });
     }

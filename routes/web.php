@@ -64,6 +64,7 @@ Route::get('/home/section/{key}', [HomeController::class, 'section'])->name('hom
 Route::get('/shop', [ShopController::class, 'index'])->name('shop.index');
 Route::get('/search', [ShopController::class, 'search'])->name('shop.search');
 Route::get('/products/{slug}', [ProductController::class, 'show'])->name('products.show');
+Route::get('/products/{slug}/related', [ProductController::class, 'related'])->name('products.related');
 Route::get('/categories/{category:slug}', [CategoryController::class, 'show'])->name('categories.show');
 Route::get('/brands/{brand:slug}', [BrandController::class, 'show'])->name('brands.show');
 

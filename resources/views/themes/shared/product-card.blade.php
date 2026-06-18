@@ -5,7 +5,7 @@
     $medium = image_url($product->primary_image, 'medium', $variants);
     $large = image_url($product->primary_image, 'large', $variants);
 @endphp
-<a href="{{ route('products.show', $product->slug) }}" class="theme-product-card group">
+<a href="{{ route('products.show', $product->slug) }}" class="theme-product-card group" data-turbo-preload>
     <div class="theme-product-image">
         @if($product->primary_image)
             <img
