@@ -1,0 +1,26 @@
+<?php
+
+return [
+    'dashboard' => 'ড্যাশবোর্ড',
+    'view_store' => 'স্টোর দেখুন',
+    'store_preferences' => 'স্টোর পছন্দসমূহ',
+    'store_preferences_hint' => 'দর্শকদের জন্য ডিফল্ট ভাষা ও কালার মোড।',
+    'default_language' => 'ডিফল্ট ভাষা',
+    'default_color_mode' => 'ডিফল্ট কালার মোড',
+    'light' => 'লাইট',
+    'dark' => 'ডার্ক',
+    'preferences_saved' => 'স্টোর পছন্দসমূহ আপডেট হয়েছে।',
+    'actions' => 'অ্যাকশন',
+    'add' => 'যোগ করুন',
+    'team_members' => 'টিম মেম্বার',
+    'products' => 'পণ্য',
+    'categories' => 'ক্যাটাগরি',
+    'brands' => 'ব্র্যান্ড',
+    'coupons' => 'কুপন',
+    'customers' => 'কাস্টমার',
+    'reviews' => 'রিভিউ',
+    'blog' => 'ব্লগ',
+    'pages' => 'পেজ',
+    'settings' => 'সেটিংস',
+    'confirm_delete' => 'আপনি কি নিশ্চিতভাবে মুছে ফেলতে চান?',
+];

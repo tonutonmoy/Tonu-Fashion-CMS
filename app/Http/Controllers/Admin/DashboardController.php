@@ -1,0 +1,47 @@
+<?php
+
+namespace App\Http\Controllers\Admin;
+
+use App\Http\Controllers\Controller;
+use App\Models\Order;
+use App\Models\Product;
+use App\Models\User;
+use App\Enums\OrderStatus;
+use App\Enums\UserRole;
+use App\Services\ActivityLogService;
+use App\Services\CourierDashboardService;
+use Illuminate\View\View;
+
+class DashboardController extends Controller
+{
+    public function __construct(
+        private CourierDashboardService $courierStats,
+        private ActivityLogService $activity,
+    ) {}
+
+    public function index(): View
+    {
+        return view('admin.dashboard', [
+            'stats' => [
+                'orders' => Order::query()->count(),
+                'pending_orders' => Order::query()->where('status', OrderStatus::Pending)->count(),
+                'products' => Product::query()->count(),
+                'customers' => User::query()->where('role', UserRole::Customer)->count(),
+                'revenue' => Order::query()
+                    ->whereIn('status', [
+                        OrderStatus::Delivered,
+                        OrderStatus::Shipped,
+                        OrderStatus::InTransit,
+                        OrderStatus::Processing,
+                        OrderStatus::Confirmed,
+                        OrderStatus::ParcelCreated,
+                        OrderStatus::Picked,
+                    ])
+                    ->sum('total'),
+            ],
+            'courier' => $this->courierStats->stats(),
+            'activityLogs' => $this->activity->recent(8),
+            'recentOrders' => Order::query()->with(['user', 'courierParcel'])->latest()->limit(10)->get(),
+        ]);
+    }
+}

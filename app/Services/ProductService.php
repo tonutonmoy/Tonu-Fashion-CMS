@@ -1,0 +1,233 @@
+<?php
+
+namespace App\Services;
+
+use App\Models\Product;
+use App\Models\ProductImage;
+use App\Models\ProductVariant;
+use App\Repositories\Contracts\ProductRepositoryInterface;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+
+class ProductService
+{
+    public function __construct(
+        private ProductRepositoryInterface $products,
+        private ImageService $images
+    ) {}
+
+    public function create(array $data, array $images = [], array $variants = [], array $variantFiles = []): Product
+    {
+        return DB::transaction(function () use ($data, $images, $variants, $variantFiles) {
+            $data['slug'] = $this->resolveSlug($data['slug'] ?? null, $data['name']);
+            unset($data['primary_image_id']);
+
+            $product = $this->products->create($data);
+
+            $this->syncImages($product, $images);
+            $this->syncVariants($product, $variants, $variantFiles);
+
+            return $product->load(['images', 'variants', 'category', 'brand']);
+        });
+    }
+
+    public function update(
+        int $id,
+        array $data,
+        array $images = [],
+        array $variants = [],
+        array $removeImageIds = [],
+        array $variantFiles = []
+    ): Product {
+        return DB::transaction(function () use ($id, $data, $images, $variants, $removeImageIds, $variantFiles) {
+            $product = $this->products->find($id);
+            $primaryImageId = $data['primary_image_id'] ?? null;
+            unset($data['primary_image_id']);
+
+            if (! empty($data['slug'])) {
+                $data['slug'] = $this->resolveSlug($data['slug'], $data['name'] ?? $product->name, $product->id);
+            } elseif (isset($data['name']) && $data['name'] !== $product->name) {
+                $data['slug'] = $this->resolveSlug(null, $data['name'], $product->id);
+            }
+
+            $product = $this->products->update($id, $data);
+
+            if ($removeImageIds) {
+                ProductImage::query()
+                    ->where('product_id', $product->id)
+                    ->whereIn('id', $removeImageIds)
+                    ->each(fn ($img) => $this->images->delete($img->path));
+                ProductImage::query()->whereIn('id', $removeImageIds)->delete();
+            }
+
+            $this->syncImages($product, $images);
+
+            if ($primaryImageId) {
+                $this->setPrimaryImage($product, (int) $primaryImageId);
+            }
+
+            $this->syncVariants($product, $variants, $variantFiles);
+
+            return $product->load(['images', 'variants', 'category', 'brand']);
+        });
+    }
+
+    public function delete(int $id): bool
+    {
+        $product = $this->products->find($id);
+
+        foreach ($product->images as $image) {
+            $this->images->delete($image->path);
+        }
+
+        foreach ($product->variants as $variant) {
+            $this->images->delete($variant->image);
+        }
+
+        return $this->products->delete($id);
+    }
+
+    private function resolveSlug(?string $slug, string $name, ?int $exceptId = null): string
+    {
+        $base = Str::slug($slug ?: $name);
+
+        return $this->uniqueSlug($base, $exceptId);
+    }
+
+    private function uniqueSlug(string $slug, ?int $exceptId = null): string
+    {
+        $original = $slug;
+        $counter = 1;
+
+        while (Product::query()
+            ->where('slug', $slug)
+            ->when($exceptId, fn ($q) => $q->where('id', '!=', $exceptId))
+            ->exists()) {
+            $slug = $original.'-'.$counter++;
+        }
+
+        return $slug;
+    }
+
+    private function syncImages(Product $product, array $images): void
+    {
+        $startOrder = (int) $product->images()->max('sort_order') + 1;
+
+        foreach ($images as $index => $file) {
+            if (! $file) {
+                continue;
+            }
+
+            $path = $this->images->upload(
+                $file,
+                'products/'.$product->id,
+                config('fashion.image.product_max_width'),
+                config('fashion.image.product_quality')
+            );
+
+            ProductImage::query()->create([
+                'product_id' => $product->id,
+                'path' => $path,
+                'alt' => $product->name,
+                'is_primary' => $product->images()->count() === 0 && $index === 0,
+                'sort_order' => $startOrder + $index,
+            ]);
+        }
+    }
+
+    private function setPrimaryImage(Product $product, int $imageId): void
+    {
+        $image = ProductImage::query()
+            ->where('product_id', $product->id)
+            ->where('id', $imageId)
+            ->first();
+
+        if (! $image) {
+            return;
+        }
+
+        ProductImage::query()
+            ->where('product_id', $product->id)
+            ->update(['is_primary' => false]);
+
+        $image->update(['is_primary' => true, 'sort_order' => 0]);
+    }
+
+    private function syncVariants(Product $product, array $variants, array $variantFiles = []): void
+    {
+        if (empty($variants)) {
+            return;
+        }
+
+        $existingIds = collect($variants)->pluck('id')->filter()->map(fn ($id) => (int) $id)->all();
+
+        if (! empty($existingIds)) {
+            ProductVariant::query()
+                ->where('product_id', $product->id)
+                ->whereNotIn('id', $existingIds)
+                ->each(function (ProductVariant $variant) {
+                    $this->images->delete($variant->image);
+                    $variant->delete();
+                });
+        } else {
+            ProductVariant::query()
+                ->where('product_id', $product->id)
+                ->each(function (ProductVariant $variant) {
+                    $this->images->delete($variant->image);
+                    $variant->delete();
+                });
+        }
+
+        foreach ($variants as $index => $variant) {
+            if (empty($variant['size']) && empty($variant['color'])) {
+                continue;
+            }
+
+            $imagePath = null;
+            $file = $variantFiles[$index]['image'] ?? null;
+
+            if ($file) {
+                $imagePath = $this->images->upload($file, 'products/'.$product->id.'/variants', 800);
+            }
+
+            $payload = [
+                'size' => $variant['size'] ?? null,
+                'color' => $variant['color'] ?? null,
+                'sku' => $variant['sku'] ?? $product->sku.'-'.Str::upper(Str::random(4)),
+                'stock' => $variant['stock'] ?? 0,
+                'price_adjustment' => $variant['price_adjustment'] ?? 0,
+                'status' => $variant['status'] ?? 'active',
+            ];
+
+            if (! empty($variant['id'])) {
+                $existing = ProductVariant::query()
+                    ->where('product_id', $product->id)
+                    ->where('id', $variant['id'])
+                    ->first();
+
+                if ($existing) {
+                    if ($imagePath) {
+                        $this->images->delete($existing->image);
+                        $payload['image'] = $imagePath;
+                    } elseif (! empty($variant['remove_image'])) {
+                        $this->images->delete($existing->image);
+                        $payload['image'] = null;
+                    }
+
+                    $existing->update($payload);
+
+                    continue;
+                }
+            }
+
+            if ($imagePath) {
+                $payload['image'] = $imagePath;
+            }
+
+            ProductVariant::query()->create([
+                'product_id' => $product->id,
+                ...$payload,
+            ]);
+        }
+    }
+}

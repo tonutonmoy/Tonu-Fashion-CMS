@@ -1,0 +1,60 @@
+<?php
+
+namespace App\Http\Controllers\Frontend;
+
+use App\Http\Controllers\Controller;
+use App\Http\Requests\ReviewRequest;
+use App\Models\Category;
+use App\Models\Product;
+use App\Repositories\Contracts\ProductRepositoryInterface;
+use App\Services\ReviewService;
+use App\Services\SeoService;
+use App\Services\WishlistService;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\View\View;
+
+class ProductController extends Controller
+{
+    use RendersThemeViews;
+
+    public function __construct(
+        private ProductRepositoryInterface $products,
+        private SeoService $seo,
+        private WishlistService $wishlist,
+        private ReviewService $reviews
+    ) {}
+
+    public function show(string $slug): View
+    {
+        $product = $this->products->findBySlug($slug);
+
+        if (! $product || $product->status->value !== 'active') {
+            abort(404);
+        }
+
+        return $this->themeView('product', [
+            'product' => $product,
+            'relatedProducts' => $this->products->getRelated($product, 8),
+            'inWishlist' => $this->wishlist->has($product),
+            'seo' => $this->seo->productMeta($product),
+            'marketingProduct' => [
+                'sku' => $product->sku,
+                'name' => $product->name,
+                'price' => (float) $product->effective_price,
+            ],
+            'viewContentEventId' => app(\App\Services\MarketingEventService::class)->trackViewContent($product)['event_id'] ?? null,
+        ]);
+    }
+
+    public function storeReview(ReviewRequest $request, Product $product): RedirectResponse
+    {
+        if (! Auth::user()->canAccessBlog()) {
+            return back()->with('error', 'You are not allowed to submit reviews.');
+        }
+
+        $this->reviews->submit($product->id, Auth::id(), $request->validated());
+
+        return back()->with('success', 'Review submitted for approval.');
+    }
+}

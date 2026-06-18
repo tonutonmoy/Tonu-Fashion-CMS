@@ -1,0 +1,26 @@
+<?php
+
+return [
+    'dashboard' => 'Dashboard',
+    'view_store' => 'View Store',
+    'store_preferences' => 'Store Preferences',
+    'store_preferences_hint' => 'Default language and color mode for visitors.',
+    'default_language' => 'Default Language',
+    'default_color_mode' => 'Default Color Mode',
+    'light' => 'Light',
+    'dark' => 'Dark',
+    'preferences_saved' => 'Store preferences updated.',
+    'actions' => 'Actions',
+    'add' => 'Add',
+    'team_members' => 'Team Members',
+    'products' => 'Products',
+    'categories' => 'Categories',
+    'brands' => 'Brands',
+    'coupons' => 'Coupons',
+    'customers' => 'Customers',
+    'reviews' => 'Reviews',
+    'blog' => 'Blog',
+    'pages' => 'Pages',
+    'settings' => 'Settings',
+    'confirm_delete' => 'Are you sure you want to delete this?',
+];
