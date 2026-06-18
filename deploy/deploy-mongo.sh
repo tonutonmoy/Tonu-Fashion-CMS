@@ -61,7 +61,10 @@ php -r "
 echo str_replace(array_keys(\$repl), array_values(\$repl), \$env);
 " > .env.tmp && mv .env.tmp .env
 
-composer install --no-dev --optimize-autoloader --no-interaction
+export COMPOSER_ALLOW_SUPERUSER=1
+
+composer install --no-dev --optimize-autoloader --no-interaction || \
+  composer update mongodb/mongodb mongodb/laravel-mongodb --no-dev --with-all-dependencies --no-interaction
 npm ci --no-audit --no-fund
 npm run build
 
