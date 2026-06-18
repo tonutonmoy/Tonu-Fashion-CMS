@@ -12,12 +12,12 @@ return [
     'homepage_initial_sections' => [
         'hero_slider',
         'categories',
+        'featured_products',
         'faq',
         'newsletter',
     ],
 
     'homepage_lazy_sections' => [
-        'featured_products',
         'new_arrivals',
         'best_sellers',
         'flash_sale',

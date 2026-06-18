@@ -51,10 +51,14 @@ function initHomeLazySections() {
                     }
                 });
             },
-            { rootMargin: '200px 0px' }
+            { rootMargin: '400px 0px' }
         );
 
         sections.forEach((el) => observer.observe(el));
+        // Eager-load first lazy block so products appear without scrolling
+        if (sections[0]) {
+            loadSection(sections[0]);
+        }
     } else {
         sections.forEach((el) => loadSection(el));
     }
