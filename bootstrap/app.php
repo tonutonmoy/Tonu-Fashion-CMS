@@ -17,6 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(append: [
             \App\Http\Middleware\EnsureInstalled::class,
             \App\Http\Middleware\SetLocale::class,
+            \App\Http\Middleware\StorefrontHtmlCacheMiddleware::class,
             \App\Http\Middleware\PerformanceProfilerMiddleware::class,
         ]);
 

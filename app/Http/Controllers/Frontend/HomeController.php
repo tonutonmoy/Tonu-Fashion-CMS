@@ -19,12 +19,12 @@ class HomeController extends Controller
 
     public function index(): View
     {
-        $sections = $this->homepage->getInitialPageData();
+        $sections = $this->homepage->getPageData();
 
         return $this->themeView('home', [
             'sections' => $sections,
             'sectionKeys' => $this->homepage->getEnabledSectionKeys(),
-            'lazySectionKeys' => $this->homepage->getLazySectionKeys(),
+            'lazySectionKeys' => [],
             'hasHomeHero' => ! empty($sections['hero_slider']['config']['media'] ?? []),
             'seo' => $this->seo->themeMeta(),
         ]);

@@ -48,7 +48,7 @@ class ProductController extends Controller
 
         return $this->themeView('product', [
             'product' => $product,
-            'productSlug' => $slug,
+            'relatedProducts' => $this->products->getRelated($product, 8),
             'inWishlist' => $this->wishlist->has($product),
             'seo' => $this->seo->productMeta($product),
             'marketingProduct' => [

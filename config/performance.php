@@ -13,15 +13,16 @@ return [
         'hero_slider',
         'categories',
         'featured_products',
+        'new_arrivals',
+        'flash_sale',
+        'best_sellers',
+        'customer_reviews',
+        'blog',
         'faq',
         'newsletter',
     ],
 
-    'homepage_lazy_sections' => [
-        'new_arrivals',
-        'best_sellers',
-        'flash_sale',
-        'customer_reviews',
-        'blog',
-    ],
+    'homepage_lazy_sections' => [],
+
+    'html_cache' => (bool) env('STOREFRONT_HTML_CACHE', true),
 ];

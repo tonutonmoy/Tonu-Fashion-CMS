@@ -8,6 +8,8 @@ use App\Services\HomepageBuilderService;
 use App\Services\ProductPageService;
 use App\Services\StorefrontCacheService;
 use Illuminate\Console\Command;
+use Illuminate\Contracts\Http\Kernel;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
 
@@ -15,7 +17,7 @@ class WarmStorefrontCacheCommand extends Command
 {
     protected $signature = 'storefront:warm-cache {--views : Also compile Blade views}';
 
-    protected $description = 'Pre-build homepage, layout, shop, theme, and marketing caches';
+    protected $description = 'Pre-build homepage, layout, shop, theme, marketing, and HTML caches';
 
     public function handle(HomepageBuilderService $homepage, StorefrontCacheService $cache): int
     {
@@ -26,15 +28,8 @@ class WarmStorefrontCacheCommand extends Command
 
         foreach (['en', 'bn'] as $locale) {
             app()->setLocale($locale);
-
-            $homepage->getInitialPageData();
-            $this->line("  homepage.initial ({$locale})");
-
-            foreach ($homepage->getLazySectionKeys() as $sectionKey) {
-                $homepage->getSectionData($sectionKey);
-                $this->line("  homepage.section.{$sectionKey} ({$locale})");
-            }
-
+            $homepage->getPageData();
+            $this->line("  homepage.page_data ({$locale})");
             gc_collect_cycles();
         }
 
@@ -82,6 +77,8 @@ class WarmStorefrontCacheCommand extends Command
         app(ProductPageService::class)->warmSlugs($productSlugs);
         $this->line('  product.pages ('.count($productSlugs).')');
 
+        $this->warmHtmlPages($productSlugs);
+
         if ($this->option('views')) {
             Artisan::call('view:cache');
             $this->line('  view:cache');
@@ -90,5 +87,35 @@ class WarmStorefrontCacheCommand extends Command
         $this->info('Storefront cache warm complete.');
 
         return self::SUCCESS;
+    }
+
+    private function warmHtmlPages(array $productSlugs): void
+    {
+        $host = parse_url((string) config('app.url'), PHP_URL_HOST) ?: 'localhost';
+        $paths = array_merge(['/', '/shop'], array_map(fn ($slug) => '/products/'.$slug, $productSlugs));
+
+        foreach (['en', 'bn'] as $locale) {
+            app()->setLocale($locale);
+
+            foreach ($paths as $path) {
+                $this->renderPath($path, $host);
+            }
+        }
+
+        app()->setLocale(config('app.locale', 'en'));
+        $this->line('  storefront.html ('.count($paths).' pages x 2 locales)');
+    }
+
+    private function renderPath(string $path, string $host): void
+    {
+        $kernel = app(Kernel::class);
+        $request = Request::create($path, 'GET');
+        $request->headers->set('Host', $host);
+        $request->headers->set('Accept', 'text/html');
+        $request->server->set('HTTP_HOST', $host);
+        $request->server->set('SERVER_NAME', $host);
+
+        $response = $kernel->handle($request);
+        $kernel->terminate($request, $response);
     }
 }

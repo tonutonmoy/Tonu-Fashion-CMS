@@ -62,10 +62,10 @@ class HomepageBuilderService
         $key = 'homepage.page_data.'.$this->locale();
 
         return Cache::remember($key, $this->cache->ttl(), function () {
-            $data = $this->getInitialPageData();
+            $data = [];
 
-            foreach ($this->getLazySectionKeys() as $sectionKey) {
-                $data[$sectionKey] = $this->getSectionData($sectionKey);
+            foreach ($this->enabledSections() as $section) {
+                $data[$section->section_key] = $this->resolveSectionData($section);
             }
 
             return $data;

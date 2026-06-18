@@ -21,6 +21,7 @@ class StorefrontCacheService
         $this->forgetHomepage();
         $this->forgetLayout();
         $this->forgetShop();
+        $this->forgetHtmlCache();
     }
 
     public function forgetHomepage(): void
@@ -41,6 +42,7 @@ class StorefrontCacheService
         Cache::forget('storefront.hero');
         Cache::forget('storefront.homepage_sections');
         Cache::forget('storefront.marketing');
+        $this->forgetHtmlCache('home');
     }
 
     public function forgetLayout(): void
@@ -58,6 +60,8 @@ class StorefrontCacheService
         foreach ([12, 24, 36, 48] as $perPage) {
             Cache::forget("shop.products.page1.{$perPage}");
         }
+
+        $this->forgetHtmlCache('shop.index');
     }
 
     public function forgetProduct(?string $slug): void
@@ -68,6 +72,31 @@ class StorefrontCacheService
 
         Cache::forget("product.show.{$slug}");
         Cache::forget("product.related.{$slug}");
+        $this->forgetHtmlCache('products.show', $slug);
+    }
+
+    public function forgetHtmlCache(?string $route = null, ?string $slug = null): void
+    {
+        $routes = $route ? [$route] : ['home', 'shop.index', 'products.show'];
+
+        foreach (['en', 'bn'] as $locale) {
+            foreach ($routes as $name) {
+                if ($name === 'products.show') {
+                    if ($slug) {
+                        Cache::forget($this->htmlCacheKey($name, $locale, $slug));
+                    }
+
+                    continue;
+                }
+
+                Cache::forget($this->htmlCacheKey($name, $locale, ''));
+            }
+        }
+    }
+
+    public function htmlCacheKey(string $route, string $locale, string $slug = ''): string
+    {
+        return 'storefront.html.'.$route.'.'.$locale.'.'.md5($slug);
     }
 
     public function recordCacheHit(): void

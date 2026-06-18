@@ -20,8 +20,16 @@ grep -q PERFORMANCE_PROFILING .env || echo "PERFORMANCE_PROFILING=false" >> .env
 sed -i 's/PERFORMANCE_PROFILING=true/PERFORMANCE_PROFILING=false/' .env
 
 PHP_INI="/etc/php/8.4/fpm/php.ini"
+PHP_POOL="/etc/php/8.4/fpm/pool.d/www.conf"
 sed -i 's/^max_execution_time = .*/max_execution_time = 120/' "$PHP_INI" 2>/dev/null || true
 sed -i 's/^memory_limit = .*/memory_limit = 256M/' "$PHP_INI" 2>/dev/null || true
+sed -i 's/^pm = .*/pm = dynamic/' "$PHP_POOL" 2>/dev/null || true
+sed -i 's/^pm.max_children = .*/pm.max_children = 8/' "$PHP_POOL" 2>/dev/null || true
+sed -i 's/^;*pm.start_servers = .*/pm.start_servers = 2/' "$PHP_POOL" 2>/dev/null || true
+sed -i 's/^;*pm.min_spare_servers = .*/pm.min_spare_servers = 2/' "$PHP_POOL" 2>/dev/null || true
+sed -i 's/^;*pm.max_spare_servers = .*/pm.max_spare_servers = 4/' "$PHP_POOL" 2>/dev/null || true
+
+npm run build 2>/dev/null || true
 
 php artisan optimize:clear
 php -d memory_limit=256M artisan storefront:warm-cache --no-interaction || true
