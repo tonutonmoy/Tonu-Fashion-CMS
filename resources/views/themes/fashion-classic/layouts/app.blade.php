@@ -18,7 +18,7 @@
     </main>
     @include('themes.shared.partials.footer')
     @include('themes.shared.partials.cart-sidebar')
-    <script src="{{ theme_asset('theme.js') }}" defer data-turbo-track="reload"></script>
+    <script src="{{ theme_asset('theme.js') }}" defer></script>
     @stack('scripts')
 </body>
 </html>

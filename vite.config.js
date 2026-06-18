@@ -19,6 +19,7 @@ export default defineConfig({
             output: {
                 manualChunks: {
                     vendor: ['axios'],
+                    turbo: ['@hotwired/turbo'],
                 },
             },
         },

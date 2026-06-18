@@ -88,7 +88,9 @@
         },
     };
 
-    document.addEventListener('DOMContentLoaded', function () {
-        if (window.FashionMarketing) FashionMarketing.pageView();
+    document.addEventListener('turbo:load', function () {
+        if (window.FashionMarketing) {
+            FashionMarketing.pageView();
+        }
     });
 })();

@@ -3,15 +3,23 @@ import * as Turbo from '@hotwired/turbo';
 window.Turbo = Turbo;
 
 import './bootstrap';
+import './turbo-instant';
 import './marketing';
 import './color-mode';
 import { onPageLoad } from './page-load';
+
+function whenIdle(fn) {
+    if ('requestIdleCallback' in window) {
+        window.requestIdleCallback(fn, { timeout: 2500 });
+    } else {
+        window.setTimeout(fn, 1200);
+    }
+}
 
 function bootStorefront() {
     import('./mobile');
     import('./cart');
     import('./search');
-    import('./support-chat');
 
     if (document.getElementById('shop-filter-form') || document.getElementById('shop-results')) {
         import('./shop');
@@ -25,9 +33,19 @@ function bootStorefront() {
     if (document.querySelector('[data-hero-slider]')) {
         import('./hero-slider');
     }
-    if (document.querySelector('.theme-product-card, .theme-section')) {
-        import('./storefront-animations');
-    }
+
+    whenIdle(() => {
+        import('./marketing-load').then(({ loadMarketingPixels }) => loadMarketingPixels());
+
+        if (document.getElementById('support-chat-widget')) {
+            import('./support-chat');
+        }
+
+        if (document.querySelector('.theme-product-card, .theme-section')) {
+            import('./storefront-animations');
+        }
+    });
+
     if (document.querySelector('[data-lazy-section]')) {
         import('./home-lazy').then(({ initHomeLazySections }) => initHomeLazySections());
     }

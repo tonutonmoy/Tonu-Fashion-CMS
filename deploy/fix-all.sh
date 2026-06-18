@@ -37,6 +37,24 @@ php artisan config:cache
 php artisan route:cache
 php artisan view:cache
 
+SITE="/etc/nginx/sites-available/${DOMAIN}"
+if [ -f "$SITE" ] && ! grep -q 'location /build/' "$SITE"; then
+  sed -i '/location \/ {/i\
+    location /build/ {\
+        expires 1y;\
+        add_header Cache-Control "public, immutable";\
+        access_log off;\
+    }\
+\
+    location ~* ^/themes/.*\\.(css|js|woff2?|svg)$ {\
+        expires 30d;\
+        add_header Cache-Control "public";\
+        access_log off;\
+    }\
+' "$SITE"
+  nginx -t && systemctl reload nginx
+fi
+
 systemctl restart php8.4-fpm
 systemctl reload nginx
 

@@ -5,7 +5,7 @@
 @endphp
 <div class="theme-hero-slide {{ ($isFirst ?? false) ? 'is-active' : '' }}" data-hero-slide>
     @if($embedUrl && ! $isVideoFile && $ytThumb)
-        <img src="{{ $ytThumb }}" alt="{{ $heroConfig['title'] ?? 'Hero' }}" loading="{{ ($isFirst ?? false) ? 'eager' : 'lazy' }}" decoding="async" class="theme-hero-bg theme-hero-video-poster">
+        <img src="{{ $ytThumb }}" alt="{{ $heroConfig['title'] ?? 'Hero' }}" loading="{{ ($isFirst ?? false) ? 'eager' : 'lazy' }}" @if($isFirst ?? false) fetchpriority="high" @endif decoding="async" class="theme-hero-bg theme-hero-video-poster">
     @elseif($embedUrl)
         <div class="theme-hero-bg theme-hero-video">
             @if($isVideoFile)
@@ -19,7 +19,7 @@
             @if(! empty($item['mobile_image']))
                 <source media="(max-width: 768px)" srcset="{{ image_url($item['mobile_image']) }}">
             @endif
-            <img src="{{ image_url($item['desktop_image']) }}" alt="{{ $heroConfig['title'] ?? 'Hero' }}" loading="{{ $loop->first ? 'eager' : 'lazy' }}" decoding="async" class="theme-hero-bg">
+            <img src="{{ image_url($item['desktop_image']) }}" alt="{{ $heroConfig['title'] ?? 'Hero' }}" loading="{{ $loop->first ? 'eager' : 'lazy' }}" @if($loop->first) fetchpriority="high" @endif decoding="async" class="theme-hero-bg">
         </picture>
     @else
         <div class="theme-hero-bg theme-hero-placeholder"></div>
