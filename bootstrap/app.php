@@ -16,7 +16,6 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->web(append: [
             \App\Http\Middleware\EnsureInstalled::class,
-            \App\Http\Middleware\CheckLicense::class,
             \App\Http\Middleware\SetLocale::class,
         ]);
 
