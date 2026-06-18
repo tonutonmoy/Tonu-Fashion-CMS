@@ -30,12 +30,18 @@ sed -i 's/^;*pm.min_spare_servers = .*/pm.min_spare_servers = 2/' "$PHP_POOL" 2>
 sed -i 's/^;*pm.max_spare_servers = .*/pm.max_spare_servers = 4/' "$PHP_POOL" 2>/dev/null || true
 
 npm run build 2>/dev/null || true
+chown -R www-data:www-data public/build 2>/dev/null || true
 
 php artisan optimize:clear
-php -d memory_limit=256M artisan storefront:warm-cache --no-interaction || true
 php artisan config:cache
 php artisan route:cache
 php artisan view:cache
+
+systemctl restart php8.4-fpm
+systemctl reload nginx
+
+# Warm cache in background so the site stays reachable during deploy
+nohup php -d memory_limit=512M artisan storefront:warm-cache --no-interaction > /tmp/warm-cache.log 2>&1 &
 
 SITE="/etc/nginx/sites-available/${DOMAIN}"
 if [ -f "$SITE" ] && ! grep -q 'location /build/' "$SITE"; then
@@ -54,9 +60,6 @@ if [ -f "$SITE" ] && ! grep -q 'location /build/' "$SITE"; then
 ' "$SITE"
   nginx -t && systemctl reload nginx
 fi
-
-systemctl restart php8.4-fpm
-systemctl reload nginx
 
 echo "=== ROUTE TESTS ==="
 for path in "/" "/admin/login" "/admin" "/shop" "/api/cart" "/api/bd/divisions" "/sitemap.xml"; do
