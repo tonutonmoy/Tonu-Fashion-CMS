@@ -22,13 +22,6 @@ class DatabaseSeeder extends Seeder
         $this->call(DemoCatalogSeeder::class);
         $this->call(ThemeSeeder::class);
         $this->call(CmsSeeder::class);
-        Coupon::factory()->create([
-            'code' => 'WELCOME10',
-            'type' => 'percentage',
-            'value' => 10,
-            'min_order_amount' => 500,
-            'expires_at' => now()->addMonths(3),
-        ]);
     }
 
     private function seedSettings(): void
@@ -49,7 +42,7 @@ class DatabaseSeeder extends Seeder
 
     private function seedUsers(): void
     {
-        User::factory()->create([
+        User::query()->create([
             'name' => config('admin.name'),
             'email' => config('admin.email'),
             'phone' => config('admin.phone'),
@@ -58,6 +51,13 @@ class DatabaseSeeder extends Seeder
             'status' => RecordStatus::Active,
         ]);
 
-        User::factory()->count(10)->create();
+        Coupon::query()->create([
+            'code' => 'WELCOME10',
+            'type' => \App\Enums\CouponType::Percentage,
+            'value' => 10,
+            'min_order_amount' => 500,
+            'expires_at' => now()->addMonths(3),
+            'status' => RecordStatus::Active,
+        ]);
     }
 }

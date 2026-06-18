@@ -22,7 +22,7 @@ class HomeController extends Controller
 
         return $this->themeView('home', [
             'sections' => $sections,
-            'sectionKeys' => $this->homepage->getEnabledSectionKeys(),
+            'sectionKeys' => array_keys($sections),
             'hasHomeHero' => ! empty($sections['hero_slider']['config']['media'] ?? []),
             'seo' => $this->seo->themeMeta(),
         ]);

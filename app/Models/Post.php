@@ -4,11 +4,10 @@ namespace App\Models;
 
 use App\Concerns\HasTranslations;
 use App\Enums\ContentStatus;
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
-class Post extends Model
+class Post extends BaseModel
 {
     use HasTranslations;
 
@@ -25,6 +24,7 @@ class Post extends Model
         'og_image',
         'status',
         'published_at',
+        'tag_ids',
         'translations',
     ];
 
@@ -33,6 +33,7 @@ class Post extends Model
         return [
             'status' => ContentStatus::class,
             'published_at' => 'datetime',
+            'tag_ids' => 'array',
             'translations' => 'array',
         ];
     }
@@ -52,8 +53,18 @@ class Post extends Model
         return $this->belongsTo(User::class, 'author_id');
     }
 
-    public function tags(): BelongsToMany
+    public function getTagsAttribute(): Collection
     {
-        return $this->belongsToMany(Tag::class);
+        if ($this->relationLoaded('tags')) {
+            return $this->getRelation('tags');
+        }
+
+        $ids = $this->tag_ids ?? [];
+
+        if ($ids === []) {
+            return new Collection;
+        }
+
+        return Tag::query()->whereIn('id', $ids)->get();
     }
 }

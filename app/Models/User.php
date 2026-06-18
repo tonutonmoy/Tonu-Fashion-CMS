@@ -5,14 +5,23 @@ namespace App\Models;
 use App\Enums\AdminPermission;
 use App\Enums\RecordStatus;
 use App\Enums\UserRole;
+use App\Models\Concerns\HasMongoIntegerId;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use MongoDB\Laravel\Auth\User as MongoAuthenticatable;
 
-class User extends Authenticatable
+class User extends MongoAuthenticatable
 {
-    use HasFactory, Notifiable;
+    use HasFactory, HasMongoIntegerId, Notifiable;
+
+    protected $connection = 'mongodb';
+
+    protected $primaryKey = 'id';
+
+    public $incrementing = false;
+
+    protected $keyType = 'int';
 
     protected $fillable = [
         'name',

@@ -111,7 +111,7 @@ class ProductService
 
     private function syncImages(Product $product, array $images): void
     {
-        $startOrder = (int) $product->images()->max('sort_order') + 1;
+        $startOrder = (int) ($product->images->max('sort_order') ?? -1) + 1;
 
         foreach ($images as $index => $file) {
             if (! $file) {

@@ -3,6 +3,8 @@
 namespace App\Repositories\Eloquent;
 
 use App\Enums\RecordStatus;
+use App\Models\Brand;
+use App\Models\Category;
 use App\Models\Product;
 use App\Repositories\Contracts\ProductRepositoryInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -41,11 +43,17 @@ class ProductRepository extends BaseRepository implements ProductRepositoryInter
             ->where('status', RecordStatus::Active);
 
         if (! empty($filters['category'])) {
-            $query->whereHas('category', fn ($q) => $q->where('slug', $filters['category']));
+            $categoryId = Category::query()->where('slug', $filters['category'])->value('id');
+            if ($categoryId) {
+                $query->where('category_id', $categoryId);
+            }
         }
 
         if (! empty($filters['brand'])) {
-            $query->whereHas('brand', fn ($q) => $q->where('slug', $filters['brand']));
+            $brandId = Brand::query()->where('slug', $filters['brand'])->value('id');
+            if ($brandId) {
+                $query->where('brand_id', $brandId);
+            }
         }
 
         if (! empty($filters['featured'])) {
@@ -62,17 +70,17 @@ class ProductRepository extends BaseRepository implements ProductRepositoryInter
         }
 
         if (! empty($filters['min_price'])) {
-            $query->whereRaw('COALESCE(sale_price, regular_price) >= ?', [$filters['min_price']]);
+            $query->where('effective_price', '>=', (float) $filters['min_price']);
         }
 
         if (! empty($filters['max_price'])) {
-            $query->whereRaw('COALESCE(sale_price, regular_price) <= ?', [$filters['max_price']]);
+            $query->where('effective_price', '<=', (float) $filters['max_price']);
         }
 
         $sort = $filters['sort'] ?? 'latest';
         match ($sort) {
-            'price_asc' => $query->orderByRaw('COALESCE(sale_price, regular_price) ASC'),
-            'price_desc' => $query->orderByRaw('COALESCE(sale_price, regular_price) DESC'),
+            'price_asc' => $query->orderBy('effective_price'),
+            'price_desc' => $query->orderByDesc('effective_price'),
             'name' => $query->orderBy('name'),
             default => $query->latest(),
         };
@@ -122,14 +130,16 @@ class ProductRepository extends BaseRepository implements ProductRepositoryInter
 
     public function getPriceBounds(): array
     {
-        $bounds = $this->model->newQuery()
+        $prices = $this->model->newQuery()
             ->where('status', RecordStatus::Active)
-            ->selectRaw('MIN(COALESCE(sale_price, regular_price)) as min_price')
-            ->selectRaw('MAX(COALESCE(sale_price, regular_price)) as max_price')
-            ->first();
+            ->pluck('effective_price');
 
-        $min = (int) floor((float) ($bounds->min_price ?? 0));
-        $max = (int) ceil((float) ($bounds->max_price ?? 10000));
+        if ($prices->isEmpty()) {
+            return ['min' => 0, 'max' => 10000];
+        }
+
+        $min = (int) floor((float) $prices->min());
+        $max = (int) ceil((float) $prices->max());
 
         if ($max <= $min) {
             $max = $min + 1000;
@@ -140,7 +150,7 @@ class ProductRepository extends BaseRepository implements ProductRepositoryInter
 
     public function getRelated(Product $product, int $limit = 8): Collection
     {
-        return $this->model->newQuery()
+        $candidates = $this->model->newQuery()
             ->with(['images', 'category', 'brand'])
             ->where('status', RecordStatus::Active)
             ->where('id', '!=', $product->id)
@@ -150,8 +160,23 @@ class ProductRepository extends BaseRepository implements ProductRepositoryInter
                     $query->orWhere('brand_id', $product->brand_id);
                 }
             })
-            ->inRandomOrder()
-            ->limit($limit)
+            ->latest()
+            ->limit(max($limit * 4, 24))
             ->get();
+
+        if ($candidates->count() < $limit) {
+            $extra = $this->model->newQuery()
+                ->with(['images', 'category', 'brand'])
+                ->where('status', RecordStatus::Active)
+                ->where('id', '!=', $product->id)
+                ->whereNotIn('id', $candidates->pluck('id')->all())
+                ->latest()
+                ->limit($limit - $candidates->count())
+                ->get();
+
+            $candidates = $candidates->concat($extra);
+        }
+
+        return $candidates->shuffle()->take($limit)->values();
     }
 }

@@ -3,9 +3,8 @@
 namespace App\Models;
 
 use App\Enums\LicenseStatus;
-use Illuminate\Database\Eloquent\Model;
 
-class License extends Model
+class License extends BaseModel
 {
     protected $fillable = [
         'license_key',

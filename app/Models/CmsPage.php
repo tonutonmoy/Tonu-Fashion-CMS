@@ -4,9 +4,8 @@ namespace App\Models;
 
 use App\Concerns\HasTranslations;
 use App\Enums\ContentStatus;
-use Illuminate\Database\Eloquent\Model;
 
-class CmsPage extends Model
+class CmsPage extends BaseModel
 {
     use HasTranslations;
 

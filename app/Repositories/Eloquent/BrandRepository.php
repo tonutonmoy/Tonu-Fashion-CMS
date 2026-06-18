@@ -5,6 +5,7 @@ namespace App\Repositories\Eloquent;
 use App\Enums\RecordStatus;
 use App\Models\Brand;
 use App\Repositories\Contracts\BrandRepositoryInterface;
+use App\Support\MongoCounts;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 
@@ -32,9 +33,12 @@ class BrandRepository extends BaseRepository implements BrandRepositoryInterface
     {
         $perPage ??= admin_per_page();
 
-        return $this->model->newQuery()
-            ->withCount('products')
+        $paginator = $this->model->newQuery()
             ->orderByDesc('id')
             ->paginate($perPage);
+
+        MongoCounts::productsForBrands($paginator);
+
+        return $paginator;
     }
 }

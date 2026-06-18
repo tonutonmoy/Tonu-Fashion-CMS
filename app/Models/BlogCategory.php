@@ -3,10 +3,9 @@
 namespace App\Models;
 
 use App\Enums\RecordStatus;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class BlogCategory extends Model
+class BlogCategory extends BaseModel
 {
     protected $fillable = ['name', 'slug', 'status'];
 

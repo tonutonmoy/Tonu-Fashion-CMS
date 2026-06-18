@@ -5,11 +5,10 @@ namespace App\Models;
 use App\Concerns\HasTranslations;
 use App\Enums\RecordStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Product extends Model
+class Product extends BaseModel
 {
     use HasFactory, HasTranslations;
 
@@ -24,6 +23,7 @@ class Product extends Model
         'stock',
         'featured',
         'free_delivery',
+        'effective_price',
         'category_id',
         'brand_id',
         'status',
@@ -38,8 +38,9 @@ class Product extends Model
     protected function casts(): array
     {
         return [
-            'regular_price' => 'decimal:2',
-            'sale_price' => 'decimal:2',
+            'regular_price' => 'float',
+            'sale_price' => 'float',
+            'effective_price' => 'float',
             'featured' => 'boolean',
             'free_delivery' => 'boolean',
             'status' => RecordStatus::class,

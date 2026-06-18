@@ -84,24 +84,20 @@ class InstallerService
     public function testDatabase(array $config): array
     {
         try {
-            $connection = [
-                'driver' => 'mysql',
-                'host' => $config['db_host'],
-                'port' => $config['db_port'] ?? 3306,
-                'database' => $config['db_database'],
-                'username' => $config['db_username'],
-                'password' => $config['db_password'] ?? '',
-                'charset' => 'utf8mb4',
-                'collation' => 'utf8mb4_unicode_ci',
-                'prefix' => '',
-                'strict' => true,
-            ];
+            $uri = $config['mongodb_uri'] ?? env('MONGODB_URI');
+            $database = $config['db_database'] ?? env('MONGODB_DATABASE', 'tonu-fashion-cms');
 
-            config(['database.connections.installer_test' => $connection]);
+            config([
+                'database.connections.installer_test' => [
+                    'driver' => 'mongodb',
+                    'dsn' => $uri,
+                    'database' => $database,
+                ],
+            ]);
             DB::purge('installer_test');
-            DB::connection('installer_test')->getPdo();
+            DB::connection('installer_test')->getMongoDB()->command(['ping' => 1]);
 
-            return ['success' => true, 'message' => 'Database connection successful.'];
+            return ['success' => true, 'message' => 'MongoDB connection successful.'];
         } catch (\Throwable $e) {
             return ['success' => false, 'message' => $e->getMessage()];
         }
@@ -112,12 +108,9 @@ class InstallerService
         $this->ensureEnvFile();
 
         $this->writeEnv([
-            'DB_CONNECTION' => 'mysql',
-            'DB_HOST' => $config['db_host'],
-            'DB_PORT' => (string) ($config['db_port'] ?? 3306),
-            'DB_DATABASE' => $config['db_database'],
-            'DB_USERNAME' => $config['db_username'],
-            'DB_PASSWORD' => $config['db_password'] ?? '',
+            'DB_CONNECTION' => 'mongodb',
+            'MONGODB_URI' => $config['mongodb_uri'] ?? env('MONGODB_URI', ''),
+            'MONGODB_DATABASE' => $config['db_database'] ?? env('MONGODB_DATABASE', 'tonu-fashion-cms'),
             'SESSION_DRIVER' => 'file',
             'CACHE_STORE' => 'file',
             'QUEUE_CONNECTION' => 'sync',
@@ -185,16 +178,13 @@ class InstallerService
             'APP_URL' => $store['app_url'] ?? config('app.url'),
             'CURRENCY_SYMBOL' => $store['currency_symbol'],
             'CURRENCY_CODE' => $store['currency_code'],
-            'SESSION_DRIVER' => 'database',
-            'CACHE_STORE' => 'database',
-            'QUEUE_CONNECTION' => 'database',
+            'SESSION_DRIVER' => 'file',
+            'CACHE_STORE' => 'file',
+            'QUEUE_CONNECTION' => 'sync',
         ]);
 
-        Artisan::call('migrate', ['--force' => true]);
-        $log[] = 'Database migrations completed.';
-
-        Artisan::call('db:seed', ['--class' => 'Database\\Seeders\\InstallSeeder', '--force' => true]);
-        $log[] = 'Default data seeded.';
+        Artisan::call('mongo:install', ['--fresh' => true]);
+        $log[] = 'MongoDB seeded with default data.';
 
         try {
             if (! File::exists(public_path('storage'))) {
@@ -356,15 +346,12 @@ class InstallerService
         }
 
         config([
-            'database.default' => env('DB_CONNECTION', 'mysql'),
-            'database.connections.mysql.host' => env('DB_HOST'),
-            'database.connections.mysql.port' => env('DB_PORT'),
-            'database.connections.mysql.database' => env('DB_DATABASE'),
-            'database.connections.mysql.username' => env('DB_USERNAME'),
-            'database.connections.mysql.password' => env('DB_PASSWORD'),
+            'database.default' => env('DB_CONNECTION', 'mongodb'),
+            'database.connections.mongodb.dsn' => env('MONGODB_URI'),
+            'database.connections.mongodb.database' => env('MONGODB_DATABASE', 'tonu-fashion-cms'),
         ]);
 
-        DB::purge('mysql');
+        DB::purge('mongodb');
     }
 
     private function putSession(string $key, array $data): void

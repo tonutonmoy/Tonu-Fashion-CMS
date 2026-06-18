@@ -146,7 +146,7 @@ class ParcelService
             ->whereNotIn('current_status', ['delivered', 'returned', 'cancelled'])
             ->with('order')
             ->orderBy('id')
-            ->chunkById(50, function ($parcels) use (&$count) {
+            ->chunk(50, function ($parcels) use (&$count) {
                 foreach ($parcels as $parcel) {
                     try {
                         $this->syncParcel($parcel);

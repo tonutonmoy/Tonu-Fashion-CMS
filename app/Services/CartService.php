@@ -11,6 +11,10 @@ use Illuminate\Support\Facades\Session;
 
 class CartService
 {
+    private const COUNT_CACHE_KEY = 'storefront.cart_count';
+
+    private const TOUCHED_KEY = 'storefront.cart_touched';
+
     public function getItems(): Collection
     {
         return CartItem::query()
@@ -22,7 +26,18 @@ class CartService
 
     public function count(): int
     {
-        return $this->getItems()->sum('quantity');
+        if (! Auth::check() && ! Session::get(self::TOUCHED_KEY, false)) {
+            return 0;
+        }
+
+        if (Session::has(self::COUNT_CACHE_KEY)) {
+            return (int) Session::get(self::COUNT_CACHE_KEY);
+        }
+
+        $count = (int) $this->getItems()->sum('quantity');
+        Session::put(self::COUNT_CACHE_KEY, $count);
+
+        return $count;
     }
 
     public function subtotal(): float
@@ -46,6 +61,7 @@ class CartService
         $item = CartItem::query()->firstOrNew($attributes);
         $item->quantity = ($item->exists ? $item->quantity : 0) + $quantity;
         $item->save();
+        $this->forgetCountCache();
 
         return $item->load(['product.images', 'variant']);
     }
@@ -56,16 +72,19 @@ class CartService
 
         if ($quantity <= 0) {
             $item->delete();
+            $this->forgetCountCache();
 
             return;
         }
 
         $item->update(['quantity' => $quantity]);
+        $this->forgetCountCache();
     }
 
     public function remove(int $cartItemId): void
     {
         $this->findOwnedItem($cartItemId)->delete();
+        $this->forgetCountCache();
     }
 
     public function clear(): void
@@ -74,6 +93,7 @@ class CartService
             ->when(Auth::check(), fn ($q) => $q->where('user_id', Auth::id()))
             ->when(! Auth::check(), fn ($q) => $q->where('session_id', Session::getId()))
             ->delete();
+        $this->forgetCountCache();
     }
 
     public function mergeGuestCart(int $userId): void
@@ -97,6 +117,13 @@ class CartService
                     $guestItem->update(['user_id' => $userId, 'session_id' => null]);
                 }
             });
+        $this->forgetCountCache();
+    }
+
+    private function forgetCountCache(): void
+    {
+        Session::put(self::TOUCHED_KEY, true);
+        Session::forget(self::COUNT_CACHE_KEY);
     }
 
     private function findOwnedItem(int $id): CartItem

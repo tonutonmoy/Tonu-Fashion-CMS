@@ -2,10 +2,9 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class WishlistItem extends Model
+class WishlistItem extends BaseModel
 {
     protected $fillable = [
         'user_id',

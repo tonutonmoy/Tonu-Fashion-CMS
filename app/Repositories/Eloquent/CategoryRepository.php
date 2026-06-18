@@ -5,6 +5,7 @@ namespace App\Repositories\Eloquent;
 use App\Enums\RecordStatus;
 use App\Models\Category;
 use App\Repositories\Contracts\CategoryRepositoryInterface;
+use App\Support\MongoCounts;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 
@@ -33,10 +34,13 @@ class CategoryRepository extends BaseRepository implements CategoryRepositoryInt
     {
         $perPage ??= admin_per_page();
 
-        return $this->model->newQuery()
-            ->withCount('products')
+        $paginator = $this->model->newQuery()
             ->orderBy('sort_order')
             ->orderBy('name')
             ->paginate($perPage);
+
+        MongoCounts::productsForCategories($paginator);
+
+        return $paginator;
     }
 }

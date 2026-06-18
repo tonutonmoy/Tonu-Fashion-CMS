@@ -5,10 +5,9 @@ namespace App\Models;
 use App\Enums\CouponType;
 use App\Enums\RecordStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Coupon extends Model
+class Coupon extends BaseModel
 {
     use HasFactory;
 

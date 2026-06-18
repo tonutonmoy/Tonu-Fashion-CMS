@@ -3,10 +3,9 @@
 namespace App\Models;
 
 use App\Enums\SupportMessageSender;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class SupportMessage extends Model
+class SupportMessage extends BaseModel
 {
     protected $fillable = [
         'support_conversation_id',

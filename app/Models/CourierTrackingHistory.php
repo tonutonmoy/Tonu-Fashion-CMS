@@ -2,10 +2,9 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class CourierTrackingHistory extends Model
+class CourierTrackingHistory extends BaseModel
 {
     protected $fillable = [
         'courier_parcel_id',

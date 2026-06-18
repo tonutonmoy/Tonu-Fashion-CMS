@@ -6,11 +6,10 @@ use App\Enums\OrderStatus;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Order extends Model
+class Order extends BaseModel
 {
     use HasFactory;
 
@@ -78,7 +77,7 @@ class Order extends Model
 
     public function courierParcel(): \Illuminate\Database\Eloquent\Relations\HasOne
     {
-        return $this->hasOne(CourierParcel::class)->latestOfMany();
+        return $this->hasOne(CourierParcel::class)->orderByDesc('id');
     }
 
     public function courierParcels(): HasMany
@@ -88,7 +87,7 @@ class Order extends Model
 
     public function hasParcel(): bool
     {
-        return $this->courierParcels()->exists();
+        return CourierParcel::query()->where('order_id', $this->id)->exists();
     }
 
     public function paymentTransactions(): HasMany

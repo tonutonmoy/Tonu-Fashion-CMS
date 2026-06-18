@@ -9,6 +9,7 @@ use App\Services\FooterBuilderService;
 use App\Services\MenuBuilderService;
 use App\Services\ThemeCustomizerService;
 use App\Services\ThemeService;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
@@ -28,30 +29,36 @@ class AppServiceProvider extends ServiceProvider
         ];
 
         View::composer($themePatterns, function ($view) {
-            $theme = app(ThemeService::class);
-            $themeSettings = $theme->settings();
-            $footer = app(FooterBuilderService::class)->get();
-            $menus = app(MenuBuilderService::class);
+            $payload = Cache::remember('storefront.layout', 600, function () {
+                $theme = app(ThemeService::class);
+                $themeSettings = $theme->settings();
+                $footer = app(FooterBuilderService::class)->get();
+                $menus = app(MenuBuilderService::class);
+
+                return [
+                    'themeSettings' => $themeSettings,
+                    'footerSettings' => $footer,
+                    'activeTheme' => $theme->activeSlug(),
+                    'headerMenu' => filter_storefront_menu($menus->getTree(MenuLocation::Header)),
+                    'footerMenu' => filter_storefront_menu($menus->getTree(MenuLocation::Footer)),
+                    'storeSettings' => [
+                        'name' => setting('name', config('app.name')),
+                        'logo' => $themeSettings->logo ?? setting('logo'),
+                        'favicon' => $themeSettings->favicon ?? setting('favicon'),
+                        'phone' => $footer->phone ?? setting('phone'),
+                        'email' => $footer->email ?? setting('email'),
+                        'address' => $footer->address ?? setting('address'),
+                        'facebook' => $footer->facebook_url ?? setting('facebook_url'),
+                        'instagram' => $footer->instagram_url ?? setting('instagram_url'),
+                        'whatsapp' => $footer->whatsapp_number ?? setting('whatsapp_number'),
+                        'messenger' => $footer->messenger_link ?? setting('messenger_link'),
+                    ],
+                ];
+            });
 
             $view->with([
-                'themeSettings' => $themeSettings,
-                'footerSettings' => $footer,
-                'activeTheme' => $theme->activeSlug(),
-                'headerMenu' => filter_storefront_menu($menus->getTree(MenuLocation::Header)),
-                'footerMenu' => filter_storefront_menu($menus->getTree(MenuLocation::Footer)),
+                ...$payload,
                 'cartCount' => app(CartService::class)->count(),
-                'storeSettings' => [
-                    'name' => setting('name', config('app.name')),
-                    'logo' => $themeSettings->logo ?? setting('logo'),
-                    'favicon' => $themeSettings->favicon ?? setting('favicon'),
-                    'phone' => $footer->phone ?? setting('phone'),
-                    'email' => $footer->email ?? setting('email'),
-                    'address' => $footer->address ?? setting('address'),
-                    'facebook' => $footer->facebook_url ?? setting('facebook_url'),
-                    'instagram' => $footer->instagram_url ?? setting('instagram_url'),
-                    'whatsapp' => $footer->whatsapp_number ?? setting('whatsapp_number'),
-                    'messenger' => $footer->messenger_link ?? setting('messenger_link'),
-                ],
             ]);
         });
 

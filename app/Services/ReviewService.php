@@ -43,15 +43,14 @@ class ReviewService
 
     private function recalculateProductRating(int $productId): void
     {
-        $stats = Review::query()
+        $reviews = Review::query()
             ->where('product_id', $productId)
             ->where('is_approved', true)
-            ->selectRaw('AVG(rating) as avg_rating, COUNT(*) as review_count')
-            ->first();
+            ->get(['rating']);
 
         Product::query()->whereKey($productId)->update([
-            'avg_rating' => round($stats->avg_rating ?? 0, 2),
-            'review_count' => $stats->review_count ?? 0,
+            'avg_rating' => round((float) $reviews->avg('rating'), 2),
+            'review_count' => $reviews->count(),
         ]);
     }
 }

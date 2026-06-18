@@ -49,6 +49,7 @@ class DemoCatalogSeeder extends Seeder
         for ($i = 1; $i <= 48; $i++) {
             $name = "Demo Product {$i}";
             $regular = 800 + ($i * 75);
+            $sale = $i % 4 === 0 ? $regular - 200 : null;
             $featured = $i <= 12;
 
             $product = Product::query()->create([
@@ -58,7 +59,8 @@ class DemoCatalogSeeder extends Seeder
                 'short_description' => 'Premium quality fashion item for everyday wear.',
                 'description' => 'Demo product seeded for Fashion BD. Replace with your own catalog from the admin panel.',
                 'regular_price' => $regular,
-                'sale_price' => $i % 4 === 0 ? $regular - 200 : null,
+                'sale_price' => $sale,
+                'effective_price' => $sale ?? $regular,
                 'stock' => 25,
                 'featured' => $featured,
                 'category_id' => $categoryIds[($i - 1) % count($categoryIds)],
@@ -70,7 +72,7 @@ class DemoCatalogSeeder extends Seeder
 
             ProductImage::query()->create([
                 'product_id' => $product->id,
-                'path' => 'https://picsum.photos/seed/fashion-bd-'.$i.'/800/1000',
+                'path' => 'images/placeholder-product.svg',
                 'is_primary' => true,
                 'sort_order' => 0,
             ]);
@@ -82,6 +84,7 @@ class DemoCatalogSeeder extends Seeder
                     'color' => $colors[($i + strlen($size)) % count($colors)],
                     'sku' => $product->sku.'-'.$size,
                     'stock' => 10,
+                    'price_adjustment' => 0,
                     'status' => RecordStatus::Active,
                 ]);
             }

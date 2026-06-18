@@ -4,10 +4,9 @@ namespace App\Models;
 
 use App\Enums\RecordStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Brand extends Model
+class Brand extends BaseModel
 {
     use HasFactory;
 

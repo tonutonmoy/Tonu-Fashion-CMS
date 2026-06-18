@@ -114,8 +114,17 @@ class PaymentService
         $query = PaymentTransaction::query()->where('gateway', $method->value);
 
         if ($txnId) {
-            return $query->where('transaction_id', $txnId)->first()
-                ?? $query->whereHas('order', fn ($q) => $q->where('order_number', $txnId))->latest()->first();
+            $transaction = $query->where('transaction_id', $txnId)->first();
+            if ($transaction) {
+                return $transaction;
+            }
+
+            $order = Order::query()->where('order_number', $txnId)->first();
+            if ($order) {
+                return $query->where('order_id', $order->id)->latest()->first();
+            }
+
+            return null;
         }
 
         if ($paymentId) {

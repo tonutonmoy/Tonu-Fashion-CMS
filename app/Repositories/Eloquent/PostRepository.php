@@ -5,6 +5,7 @@ namespace App\Repositories\Eloquent;
 use App\Enums\ContentStatus;
 use App\Models\Post;
 use App\Repositories\Contracts\PostRepositoryInterface;
+use App\Support\PostTags;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 
@@ -17,10 +18,16 @@ class PostRepository extends BaseRepository implements PostRepositoryInterface
 
     public function findBySlug(string $slug): ?Post
     {
-        return $this->model->newQuery()
-            ->with(['category', 'tags', 'author'])
+        $post = $this->model->newQuery()
+            ->with(['category', 'author'])
             ->where('slug', $slug)
             ->first();
+
+        if ($post) {
+            PostTags::hydrate($post);
+        }
+
+        return $post;
     }
 
     public function paginateAdmin(array $filters = [], ?int $perPage = null): LengthAwarePaginator
@@ -43,12 +50,18 @@ class PostRepository extends BaseRepository implements PostRepositoryInterface
 
     public function paginatePublished(int $perPage = 12): LengthAwarePaginator
     {
-        return $this->publishedQuery()->paginate($perPage);
+        $paginator = $this->publishedQuery()->paginate($perPage);
+        PostTags::hydrateMany($paginator);
+
+        return $paginator;
     }
 
     public function getPublishedFeatured(int $limit = 3): Collection
     {
-        return $this->publishedQuery()->limit($limit)->get();
+        $posts = $this->publishedQuery()->limit($limit)->get();
+        PostTags::hydrateMany($posts);
+
+        return $posts;
     }
 
     public function getRelated(Post $post, int $limit = 4): Collection
@@ -63,7 +76,7 @@ class PostRepository extends BaseRepository implements PostRepositoryInterface
     private function publishedQuery()
     {
         return $this->model->newQuery()
-            ->with(['category', 'tags'])
+            ->with(['category'])
             ->where('status', ContentStatus::Published)
             ->where(fn ($q) => $q->whereNull('published_at')->orWhere('published_at', '<=', now()))
             ->latest('published_at');

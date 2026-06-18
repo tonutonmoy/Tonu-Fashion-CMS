@@ -2,9 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 
-class BuilderDraft extends Model
+class BuilderDraft extends BaseModel
 {
     protected $fillable = [
         'has_changes',

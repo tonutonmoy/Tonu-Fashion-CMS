@@ -2,9 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 
-class ThemeSetting extends Model
+class ThemeSetting extends BaseModel
 {
     protected $fillable = [
         'active_theme',

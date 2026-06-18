@@ -3,10 +3,9 @@
 namespace App\Models;
 
 use App\Enums\MenuLocation;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Menu extends Model
+class Menu extends BaseModel
 {
     protected $fillable = ['name', 'location'];
 

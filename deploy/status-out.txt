@@ -1,0 +1,28 @@
+﻿>>> tail -40 /var/log/mysql/error.log 2>/dev/null || journalctl -u mysql -n 20 --no-pager -o cat
+mysql.service: Main process exited, code=exited, status=1/FAILURE
+mysql.service: Failed with result 'exit-code'.
+Failed to start MySQL Community Server.
+mysql.service: Consumed 1.794s CPU time.
+mysql.service: Scheduled restart job, restart counter is at 31.
+Stopped MySQL Community Server.
+mysql.service: Consumed 1.794s CPU time.
+Starting MySQL Community Server...
+mysqld: Error on realpath() on '/var/lib/mysql-files' (Error 2 - No such file or directory)
+2026-06-18T11:38:29.273423Z 0 [Warning] [MY-011068] [Server] The syntax 'expire-logs-days' is deprecated and will be removed in a future release. Please use binlog_expire_logs_seconds instead.
+2026-06-18T11:38:32.273530Z 0 [ERROR] [MY-010095] [Server] Failed to access directory for --secure-file-priv. Please make sure that directory exists and is accessible by MySQL Server. Supplied value : /var/lib/mysql-files
+2026-06-18T11:38:32.275190Z 0 [ERROR] [MY-010119] [Server] Aborting
+mysql.service: Main process exited, code=exited, status=1/FAILURE
+mysql.service: Failed with result 'exit-code'.
+Failed to start MySQL Community Server.
+mysql.service: Consumed 1.942s CPU time.
+mysql.service: Scheduled restart job, restart counter is at 32.
+Stopped MySQL Community Server.
+mysql.service: Consumed 1.942s CPU time.
+Starting MySQL Community Server...
+
+>>> cat /etc/mysql/mysql.conf.d/mysqld.cnf | grep -E 'datadir|socket|bind' || true
+# socket	= /var/run/mysqld/mysqld.sock
+# datadir	= /var/lib/mysql
+bind-address		= 127.0.0.1
+mysqlx-bind-address	= 127.0.0.1
+

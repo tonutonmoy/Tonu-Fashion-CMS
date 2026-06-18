@@ -49,14 +49,30 @@ class ImageService
     public function url(?string $path): ?string
     {
         if (! $path) {
-            return null;
+            return asset('images/placeholder-product.svg');
+        }
+
+        if ($this->isBrokenDemoUrl($path)) {
+            return asset('images/placeholder-product.svg');
         }
 
         if ($this->isRemoteUrl($path)) {
             return $path;
         }
 
+        if (file_exists(public_path($path))) {
+            return asset($path);
+        }
+
         return Storage::disk('public')->url($path);
+    }
+
+    private function isBrokenDemoUrl(string $path): bool
+    {
+        return str_contains($path, 'ibb.co')
+            || str_contains($path, 'imgbb.com')
+            || str_contains($path, 'placeholder-fashion')
+            || str_contains($path, 'picsum.photos');
     }
 
     public function isRemoteUrl(string $path): bool

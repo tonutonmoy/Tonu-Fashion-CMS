@@ -35,7 +35,7 @@ class BlogService
             $post = $this->posts->create($data);
             $this->syncTags($post, $tagNames);
 
-            return $post->load(['category', 'tags']);
+            return $post->load(['category']);
         });
     }
 
@@ -64,7 +64,7 @@ class BlogService
             $post = $this->posts->update($id, $data);
             $this->syncTags($post, $tagNames);
 
-            return $post->load(['category', 'tags']);
+            return $post->load(['category']);
         });
     }
 
@@ -87,7 +87,7 @@ class BlogService
             )->id)
             ->all();
 
-        $post->tags()->sync($ids);
+        $post->update(['tag_ids' => $ids]);
     }
 
     private function uniqueSlug(string $value, ?int $exceptId = null): string

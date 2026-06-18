@@ -9,6 +9,7 @@ use App\Repositories\Contracts\ProductRepositoryInterface;
 use App\Services\SeoService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\View\View;
 
 class ShopController extends Controller
@@ -25,8 +26,8 @@ class ShopController extends Controller
     public function index(Request $request): View|JsonResponse
     {
         $filters = $request->all();
-        $products = $this->products->paginateShop($filters, config('fashion.pagination.products'));
-        $priceBounds = $this->products->getPriceBounds();
+        $catalog = $this->catalogMeta();
+        $products = $this->paginateShop($filters);
 
         if ($request->ajax() || $request->boolean('ajax')) {
             return response()->json([
@@ -37,11 +38,11 @@ class ShopController extends Controller
 
         return $this->themeView('shop', [
             'products' => $products,
-            'categories' => $this->categories->getActiveOrdered(),
-            'brands' => $this->brands->getActive(),
+            'categories' => $catalog['categories'],
+            'brands' => $catalog['brands'],
             'filters' => $filters,
-            'priceBounds' => $priceBounds,
-            'seo' => $this->seo->meta(['title' => 'Shop | '.setting('store', 'name')]),
+            'priceBounds' => $catalog['priceBounds'],
+            'seo' => $this->seo->meta(['title' => 'Shop | '.setting('name', config('app.name'))]),
         ]);
     }
 
@@ -53,13 +54,36 @@ class ShopController extends Controller
             return redirect()->route('shop.index', ['q' => $query]);
         }
 
+        $catalog = $this->catalogMeta();
+
         return $this->themeView('shop', [
-            'products' => $this->products->paginateShop([], config('fashion.pagination.products')),
+            'products' => $this->paginateShop([]),
+            'categories' => $catalog['categories'],
+            'brands' => $catalog['brands'],
+            'filters' => [],
+            'priceBounds' => $catalog['priceBounds'],
+            'seo' => $this->seo->meta(['title' => 'Shop | '.setting('name', config('app.name'))]),
+        ]);
+    }
+
+    private function catalogMeta(): array
+    {
+        return Cache::remember('shop.catalog_meta', 600, fn () => [
             'categories' => $this->categories->getActiveOrdered(),
             'brands' => $this->brands->getActive(),
-            'filters' => [],
             'priceBounds' => $this->products->getPriceBounds(),
-            'seo' => $this->seo->meta(['title' => 'Shop | '.setting('store', 'name')]),
         ]);
+    }
+
+    private function paginateShop(array $filters)
+    {
+        $perPage = config('fashion.pagination.products');
+        $hasFilters = collect($filters)->filter(fn ($value) => $value !== null && $value !== '')->isNotEmpty();
+
+        if ($hasFilters) {
+            return $this->products->paginateShop($filters, $perPage);
+        }
+
+        return Cache::remember('shop.products.page1.'.$perPage, 300, fn () => $this->products->paginateShop([], $perPage));
     }
 }

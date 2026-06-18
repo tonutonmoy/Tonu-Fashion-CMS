@@ -63,7 +63,7 @@ class CmsSeeder extends Seeder
             ['name' => $location->label()]
         );
 
-        if ($menu->allItems()->exists()) {
+        if (MenuItem::query()->where('menu_id', $menu->id)->exists()) {
             return;
         }
 

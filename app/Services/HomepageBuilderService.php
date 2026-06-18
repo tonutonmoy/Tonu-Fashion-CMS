@@ -11,6 +11,7 @@ use App\Repositories\Contracts\HomepageSectionRepositoryInterface;
 use App\Repositories\Contracts\PostRepositoryInterface;
 use App\Repositories\Contracts\ProductRepositoryInterface;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 
 class HomepageBuilderService
 {
@@ -29,13 +30,53 @@ class HomepageBuilderService
 
     public function getPageData(): array
     {
-        $data = [];
+        return Cache::remember('homepage.page_data.'.app()->getLocale(), 600, function () {
+            $sections = $this->enabledSections();
+            $productPool = $this->buildProductPool($sections);
+            $data = [];
 
-        foreach ($this->enabledSections() as $section) {
-            $data[$section->section_key] = $this->resolveSectionData($section);
+            foreach ($sections as $section) {
+                $data[$section->section_key] = $this->resolveSectionData($section, $productPool);
+            }
+
+            return $data;
+        });
+    }
+
+    /** @param  array<string, \Illuminate\Support\Collection<int, Product>>  $productPool */
+    private function buildProductPool(Collection $sections): array
+    {
+        $needsProducts = $sections->pluck('section_key')->intersect([
+            HomepageSectionKey::FeaturedProducts->value,
+            HomepageSectionKey::NewArrivals->value,
+            HomepageSectionKey::FlashSale->value,
+            HomepageSectionKey::BestSellers->value,
+        ]);
+
+        if ($needsProducts->isEmpty()) {
+            return [];
         }
 
-        return $data;
+        $catalog = Product::query()
+            ->with(['images', 'category'])
+            ->where('status', RecordStatus::Active)
+            ->latest()
+            ->limit(48)
+            ->get();
+
+        return [
+            'featured' => $catalog->where('featured', true)->take(8)->values(),
+            'new_arrivals' => $catalog->take(8)->values(),
+            'best_sellers' => $catalog->sortByDesc('review_count')->take(8)->values(),
+            'flash_sale' => $catalog->whereNotNull('sale_price')->take(8)->values(),
+        ];
+    }
+
+    public function clearPageCache(): void
+    {
+        foreach (['en', 'bn'] as $locale) {
+            Cache::forget('homepage.page_data.'.$locale);
+        }
     }
 
     public function getAllSections(): Collection
@@ -75,7 +116,8 @@ class HomepageBuilderService
         $this->sections->syncDefaults($defaults);
     }
 
-    private function resolveSectionData($section): array
+    /** @param  array<string, \Illuminate\Support\Collection<int, Product>>  $productPool */
+    private function resolveSectionData($section, array $productPool = []): array
     {
         $settings = $section->settings ?? [];
 
@@ -89,11 +131,11 @@ class HomepageBuilderService
                 'settings' => $settings,
             ],
             HomepageSectionKey::FeaturedProducts->value => [
-                'products' => $this->getProducts($settings, 'featured'),
+                'products' => $this->getProducts($settings, 'featured', $productPool['featured'] ?? null),
                 'settings' => $settings,
             ],
             HomepageSectionKey::NewArrivals->value => [
-                'products' => Product::query()
+                'products' => $productPool['new_arrivals'] ?? Product::query()
                     ->with(['images', 'category'])
                     ->where('status', RecordStatus::Active)
                     ->latest()
@@ -102,12 +144,14 @@ class HomepageBuilderService
                 'settings' => $settings,
             ],
             HomepageSectionKey::FlashSale->value => [
-                'products' => $this->getFlashSaleProducts($settings),
+                'products' => $this->isFlashSaleActive($settings)
+                    ? ($productPool['flash_sale'] ?? $this->getFlashSaleProducts($settings))
+                    : collect(),
                 'settings' => $settings,
                 'active' => $this->isFlashSaleActive($settings),
             ],
             HomepageSectionKey::BestSellers->value => [
-                'products' => Product::query()
+                'products' => $productPool['best_sellers'] ?? Product::query()
                     ->with(['images', 'category'])
                     ->where('status', RecordStatus::Active)
                     ->orderByDesc('review_count')
@@ -150,7 +194,7 @@ class HomepageBuilderService
         return $query->limit($settings['limit'] ?? 6)->get();
     }
 
-    private function getProducts(array $settings, string $type): Collection
+    private function getProducts(array $settings, string $type, ?Collection $pool = null): Collection
     {
         if (! empty($settings['product_ids'])) {
             return Product::query()
@@ -158,6 +202,10 @@ class HomepageBuilderService
                 ->whereIn('id', $settings['product_ids'])
                 ->where('status', RecordStatus::Active)
                 ->get();
+        }
+
+        if ($type === 'featured' && $pool) {
+            return $pool;
         }
 
         if ($type === 'featured') {

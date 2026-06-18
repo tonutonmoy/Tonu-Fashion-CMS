@@ -2,9 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 
-class HomepageSection extends Model
+class HomepageSection extends BaseModel
 {
     protected $fillable = [
         'section_key',

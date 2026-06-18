@@ -5,6 +5,7 @@ namespace App\Repositories\Eloquent;
 use App\Enums\UserRole;
 use App\Models\User;
 use App\Repositories\Contracts\UserRepositoryInterface;
+use App\Support\MongoCounts;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class UserRepository extends BaseRepository implements UserRepositoryInterface
@@ -24,7 +25,6 @@ class UserRepository extends BaseRepository implements UserRepositoryInterface
         $perPage ??= admin_per_page();
 
         $query = $this->model->newQuery()
-            ->withCount('orders')
             ->where('role', UserRole::Customer);
 
         if (! empty($filters['search'])) {
@@ -40,7 +40,10 @@ class UserRepository extends BaseRepository implements UserRepositoryInterface
             $query->where('status', $filters['status']);
         }
 
-        return $query->latest()->paginate($perPage)->withQueryString();
+        $paginator = $query->latest()->paginate($perPage)->withQueryString();
+        MongoCounts::ordersForUsers($paginator);
+
+        return $paginator;
     }
 
     public function paginateAdmins(?int $perPage = null): LengthAwarePaginator

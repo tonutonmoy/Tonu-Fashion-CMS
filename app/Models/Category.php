@@ -5,10 +5,9 @@ namespace App\Models;
 use App\Concerns\HasTranslations;
 use App\Enums\RecordStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Category extends Model
+class Category extends BaseModel
 {
     use HasFactory, HasTranslations;
 

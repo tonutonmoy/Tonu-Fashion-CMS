@@ -47,11 +47,8 @@ class InstallerController extends Controller
 
         return view('install.database', [
             'config' => array_merge([
-                'db_host' => '127.0.0.1',
-                'db_port' => 3306,
-                'db_database' => '',
-                'db_username' => '',
-                'db_password' => '',
+                'mongodb_uri' => env('MONGODB_URI', ''),
+                'db_database' => env('MONGODB_DATABASE', 'tonu-fashion-cms'),
             ], $session),
         ]);
     }

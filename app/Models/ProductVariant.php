@@ -3,10 +3,9 @@
 namespace App\Models;
 
 use App\Enums\RecordStatus;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class ProductVariant extends Model
+class ProductVariant extends BaseModel
 {
     protected $fillable = [
         'product_id',
@@ -22,7 +21,7 @@ class ProductVariant extends Model
     protected function casts(): array
     {
         return [
-            'price_adjustment' => 'decimal:2',
+            'price_adjustment' => 'float',
             'status' => RecordStatus::class,
         ];
     }

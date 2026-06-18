@@ -35,6 +35,25 @@ class ThemeSeeder extends Seeder
 
         app(HomepageBuilderService::class)->seedDefaults();
 
-        // Hero slides are managed in admin — no default slides seeded.
+        $hero = \App\Models\HomepageSection::query()->where('section_key', 'hero_slider')->first();
+        if ($hero) {
+            $hero->update([
+                'settings' => array_merge($hero->settings ?? [], [
+                    'title' => 'New Season Collection',
+                    'subtitle' => 'Premium fashion with cash on delivery across Bangladesh.',
+                    'button_text' => 'Shop Now',
+                    'button_link' => '/shop',
+                    'show_title' => true,
+                    'show_subtitle' => true,
+                    'show_button' => true,
+                    'media' => [[
+                        'id' => 'hero-1',
+                        'type' => 'image',
+                        'desktop_image' => 'images/placeholder-product.svg',
+                        'sort_order' => 1,
+                    ]],
+                ]),
+            ]);
+        }
     }
 }

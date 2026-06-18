@@ -3,9 +3,8 @@
 namespace App\Models;
 
 use App\Enums\RecordStatus;
-use Illuminate\Database\Eloquent\Model;
 
-class HeroSlide extends Model
+class HeroSlide extends BaseModel
 {
     protected $fillable = [
         'title',
