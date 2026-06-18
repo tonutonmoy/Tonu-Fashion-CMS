@@ -5,6 +5,9 @@
 /public/hot
 /public/storage
 
+/bootstrap/cache/*.php
+!bootstrap/cache/.gitignore
+
 /storage/*.key
 /storage/pail
 /storage/app/installed
