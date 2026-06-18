@@ -70,7 +70,7 @@ class WarmStorefrontCacheCommand extends Command
             ->where('status', RecordStatus::Active)
             ->orderByDesc('featured')
             ->latest()
-            ->limit(12)
+            ->limit(48)
             ->pluck('slug')
             ->all();
 

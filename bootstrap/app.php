@@ -12,6 +12,16 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withSchedule(function (\Illuminate\Console\Scheduling\Schedule $schedule) {
         $schedule->job(new \App\Jobs\SyncCourierParcelsJob)->everyThirtyMinutes();
+
+        if (config('performance.warm_cache_cron') !== 'off') {
+            $command = $schedule->command('storefront:warm-cache')->withoutOverlapping(30);
+
+            match (config('performance.warm_cache_cron')) {
+                'daily' => $command->dailyAt('04:00'),
+                'everySixHours' => $command->everySixHours(),
+                default => $command->hourly(),
+            };
+        }
     })
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->web(append: [

@@ -18,6 +18,9 @@ find storage/framework/cache/data -type d -exec chmod 775 {} \; 2>/dev/null || t
 
 grep -q PERFORMANCE_PROFILING .env || echo "PERFORMANCE_PROFILING=false" >> .env
 sed -i 's/PERFORMANCE_PROFILING=true/PERFORMANCE_PROFILING=false/' .env
+grep -q STOREFRONT_SYSTEM_FONTS .env || echo "STOREFRONT_SYSTEM_FONTS=true" >> .env
+sed -i 's/STOREFRONT_SYSTEM_FONTS=false/STOREFRONT_SYSTEM_FONTS=true/' .env
+grep -q STOREFRONT_HTML_CACHE .env || echo "STOREFRONT_HTML_CACHE=true" >> .env
 
 PHP_INI="/etc/php/8.4/fpm/php.ini"
 PHP_POOL="/etc/php/8.4/fpm/pool.d/www.conf"
@@ -66,5 +69,10 @@ for path in "/" "/admin/login" "/admin" "/shop" "/api/cart" "/api/bd/divisions" 
   code=$(curl -sk -o /dev/null -w "%{http_code}" --max-time 30 "https://127.0.0.1${path}" -H "Host: ${DOMAIN}")
   echo "${path} -> ${code}"
 done
+
+bash /root/setup-cron.sh 2>/dev/null || {
+  CRON_LINE="* * * * * cd ${APP} && php artisan schedule:run >> /dev/null 2>&1"
+  (crontab -l 2>/dev/null | grep -Fv "artisan schedule:run"; echo "$CRON_LINE") | crontab - 2>/dev/null || true
+}
 
 echo "FIX_ALL_OK"

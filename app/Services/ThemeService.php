@@ -86,7 +86,9 @@ class ThemeService
             --theme-primary: {$s->primary_color};
             --theme-secondary: {$s->secondary_color};
             --theme-accent: {$s->accent_color};
-            --theme-font: '{$s->font_family}', system-ui, sans-serif;
+            --theme-font: ".(config('performance.use_system_fonts')
+                ? "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
+                : "'{$s->font_family}', system-ui, sans-serif").";
             --theme-btn-radius: {$s->button_radius};
             --theme-container-width: {$s->container_width};
         }
