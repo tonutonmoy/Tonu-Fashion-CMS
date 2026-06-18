@@ -44,6 +44,7 @@ class MongoInstallCommand extends Command
         file_put_contents(storage_path('app/installed'), now()->toIso8601String());
 
         Artisan::call('optimize:clear');
+        Artisan::call('mongo:create-indexes');
         Artisan::call('demo:fix-images');
         Artisan::call('storefront:warm-cache');
         Artisan::call('config:cache');

@@ -3,51 +3,55 @@
 namespace App\Console\Commands;
 
 use App\Services\HomepageBuilderService;
+use App\Services\StorefrontCacheService;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
 
 class WarmStorefrontCacheCommand extends Command
 {
-    protected $signature = 'storefront:warm-cache';
+    protected $signature = 'storefront:warm-cache {--views : Also compile Blade views}';
 
-    protected $description = 'Pre-build homepage, layout, and shop caches for fast first page load';
+    protected $description = 'Pre-build homepage, layout, shop, theme, and marketing caches';
 
-    public function handle(HomepageBuilderService $homepage): int
+    public function handle(HomepageBuilderService $homepage, StorefrontCacheService $cache): int
     {
+        @ini_set('memory_limit', '512M');
+
         $this->info('Warming storefront caches…');
+        $ttl = $cache->ttl();
 
-        $homepage->getPageData();
-        $this->line('  homepage.page_data');
+        foreach (['en', 'bn'] as $locale) {
+            app()->setLocale($locale);
 
-        Cache::remember('storefront.layout', 600, function () {
+            $homepage->getInitialPageData();
+            $this->line("  homepage.initial ({$locale})");
+
+            foreach ($homepage->getLazySectionKeys() as $sectionKey) {
+                $homepage->getSectionData($sectionKey);
+                $this->line("  homepage.section.{$sectionKey} ({$locale})");
+            }
+
+            gc_collect_cycles();
+        }
+
+        app()->setLocale(config('app.locale', 'en'));
+
+        Cache::remember('storefront.layout', $ttl, function () {
             $theme = app(\App\Services\ThemeService::class);
-            $themeSettings = $theme->settings();
-            $footer = app(\App\Services\FooterBuilderService::class)->get();
-            $menus = app(\App\Services\MenuBuilderService::class);
 
             return [
-                'themeSettings' => $themeSettings,
-                'footerSettings' => $footer,
+                'themeSettings' => $theme->settings(),
+                'footerSettings' => app(\App\Services\FooterBuilderService::class)->get(),
                 'activeTheme' => $theme->activeSlug(),
-                'headerMenu' => filter_storefront_menu($menus->getTree(\App\Enums\MenuLocation::Header)),
-                'footerMenu' => filter_storefront_menu($menus->getTree(\App\Enums\MenuLocation::Footer)),
-                'storeSettings' => [
-                    'name' => setting('name', config('app.name')),
-                    'logo' => $themeSettings->logo ?? setting('logo'),
-                    'favicon' => $themeSettings->favicon ?? setting('favicon'),
-                    'phone' => $footer->phone ?? setting('phone'),
-                    'email' => $footer->email ?? setting('email'),
-                    'address' => $footer->address ?? setting('address'),
-                    'facebook' => $footer->facebook_url ?? setting('facebook_url'),
-                    'instagram' => $footer->instagram_url ?? setting('instagram_url'),
-                    'whatsapp' => $footer->whatsapp_number ?? setting('whatsapp_number'),
-                    'messenger' => $footer->messenger_link ?? setting('messenger_link'),
-                ],
+                'headerMenu' => filter_storefront_menu(app(\App\Services\MenuBuilderService::class)->getTree(\App\Enums\MenuLocation::Header)),
+                'footerMenu' => filter_storefront_menu(app(\App\Services\MenuBuilderService::class)->getTree(\App\Enums\MenuLocation::Footer)),
+                'storeSettings' => ['name' => setting('name', config('app.name'))],
             ];
         });
         $this->line('  storefront.layout');
 
-        Cache::remember('shop.catalog_meta', 600, fn () => [
+        Cache::remember('shop.catalog_meta', $ttl, fn () => [
             'categories' => app(\App\Repositories\Contracts\CategoryRepositoryInterface::class)->getActiveOrdered(),
             'brands' => app(\App\Repositories\Contracts\BrandRepositoryInterface::class)->getActive(),
             'priceBounds' => app(\App\Repositories\Contracts\ProductRepositoryInterface::class)->getPriceBounds(),
@@ -55,8 +59,19 @@ class WarmStorefrontCacheCommand extends Command
         $this->line('  shop.catalog_meta');
 
         $perPage = config('fashion.pagination.products');
-        Cache::remember('shop.products.page1.'.$perPage, 300, fn () => app(\App\Repositories\Contracts\ProductRepositoryInterface::class)->paginateShop([], $perPage));
+        Cache::remember('shop.products.page1.'.$perPage, $ttl, fn () => app(\App\Repositories\Contracts\ProductRepositoryInterface::class)->paginateShop([], $perPage));
         $this->line('  shop.products.page1');
+
+        Cache::remember('storefront.marketing', $ttl, fn () => [
+            'pixels' => setting('marketing_pixels', []),
+            'gtm' => setting('gtm_container_id'),
+        ]);
+        $this->line('  storefront.marketing');
+
+        if ($this->option('views')) {
+            Artisan::call('view:cache');
+            $this->line('  view:cache');
+        }
 
         $this->info('Storefront cache warm complete.');
 

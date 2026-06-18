@@ -12,6 +12,7 @@ use App\Repositories\Contracts\PostRepositoryInterface;
 use App\Repositories\Contracts\ProductRepositoryInterface;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\View;
 
 class HomepageBuilderService
 {
@@ -20,7 +21,8 @@ class HomepageBuilderService
         private ProductRepositoryInterface $products,
         private PostRepositoryInterface $posts,
         private BuilderPublishService $publish,
-        private HeroBuilderService $hero
+        private HeroBuilderService $hero,
+        private StorefrontCacheService $cache,
     ) {}
 
     public function getEnabledSectionKeys(): array
@@ -28,55 +30,86 @@ class HomepageBuilderService
         return $this->enabledSections()->pluck('section_key')->all();
     }
 
-    public function getPageData(): array
+    public function getLazySectionKeys(): array
     {
-        return Cache::remember('homepage.page_data.'.app()->getLocale(), 600, function () {
-            $sections = $this->enabledSections();
-            $productPool = $this->buildProductPool($sections);
+        $lazy = config('performance.homepage_lazy_sections', []);
+
+        return array_values(array_intersect($this->getEnabledSectionKeys(), $lazy));
+    }
+
+    public function getInitialPageData(): array
+    {
+        $key = 'homepage.initial.'.$this->locale();
+
+        return Cache::remember($key, $this->cache->ttl(), function () {
+            $initial = config('performance.homepage_initial_sections', []);
             $data = [];
 
-            foreach ($sections as $section) {
-                $data[$section->section_key] = $this->resolveSectionData($section, $productPool);
+            foreach ($this->enabledSections() as $section) {
+                if (! in_array($section->section_key, $initial, true)) {
+                    continue;
+                }
+
+                $data[$section->section_key] = $this->resolveSectionData($section);
             }
 
             return $data;
         });
     }
 
-    /** @param  array<string, \Illuminate\Support\Collection<int, Product>>  $productPool */
-    private function buildProductPool(Collection $sections): array
+    public function getPageData(): array
     {
-        $needsProducts = $sections->pluck('section_key')->intersect([
-            HomepageSectionKey::FeaturedProducts->value,
-            HomepageSectionKey::NewArrivals->value,
-            HomepageSectionKey::FlashSale->value,
-            HomepageSectionKey::BestSellers->value,
-        ]);
+        $key = 'homepage.page_data.'.$this->locale();
 
-        if ($needsProducts->isEmpty()) {
-            return [];
+        return Cache::remember($key, $this->cache->ttl(), function () {
+            $data = $this->getInitialPageData();
+
+            foreach ($this->getLazySectionKeys() as $sectionKey) {
+                $data[$sectionKey] = $this->getSectionData($sectionKey);
+            }
+
+            return $data;
+        });
+    }
+
+    public function getSectionData(string $sectionKey): array
+    {
+        return Cache::remember(
+            "homepage.section.{$sectionKey}.{$this->locale()}",
+            $this->cache->ttl(),
+            function () use ($sectionKey) {
+                $section = $this->enabledSections()->firstWhere('section_key', $sectionKey);
+
+                if (! $section) {
+                    return ['settings' => []];
+                }
+
+                return $this->resolveSectionData($section);
+            }
+        );
+    }
+
+    public function renderLazySection(string $sectionKey): string
+    {
+        $view = config("cms.homepage_sections.{$sectionKey}");
+
+        if (! $view || ! View::exists($view)) {
+            return '';
         }
 
-        $catalog = Product::query()
-            ->with(['images', 'category'])
-            ->where('status', RecordStatus::Active)
-            ->latest()
-            ->limit(48)
-            ->get();
+        $sections = [$sectionKey => $this->getSectionData($sectionKey)];
+        $productKeys = config('cms.product_section_keys', []);
 
-        return [
-            'featured' => $catalog->where('featured', true)->take(8)->values(),
-            'new_arrivals' => $catalog->take(8)->values(),
-            'best_sellers' => $catalog->sortByDesc('review_count')->take(8)->values(),
-            'flash_sale' => $catalog->whereNotNull('sale_price')->take(8)->values(),
-        ];
+        if (in_array($sectionKey, $productKeys, true)) {
+            return view($view, ['sections' => $sections, 'sectionKey' => $sectionKey])->render();
+        }
+
+        return view($view, ['sections' => $sections])->render();
     }
 
     public function clearPageCache(): void
     {
-        foreach (['en', 'bn'] as $locale) {
-            Cache::forget('homepage.page_data.'.$locale);
-        }
+        $this->cache->forgetHomepage();
     }
 
     public function getAllSections(): Collection
@@ -87,16 +120,19 @@ class HomepageBuilderService
     public function toggleSection(int $id, bool $enabled): void
     {
         $this->publish->toggleHomepageSection($id, $enabled);
+        $this->clearPageCache();
     }
 
     public function updateSection(int $id, array $data): void
     {
         $this->publish->updateHomepageSection($id, $data);
+        $this->clearPageCache();
     }
 
     public function reorderSections(array $orderedIds): void
     {
         $this->publish->reorderHomepageSections($orderedIds);
+        $this->clearPageCache();
     }
 
     public function seedDefaults(): void
@@ -116,8 +152,7 @@ class HomepageBuilderService
         $this->sections->syncDefaults($defaults);
     }
 
-    /** @param  array<string, \Illuminate\Support\Collection<int, Product>>  $productPool */
-    private function resolveSectionData($section, array $productPool = []): array
+    private function resolveSectionData($section): array
     {
         $settings = $section->settings ?? [];
 
@@ -131,45 +166,53 @@ class HomepageBuilderService
                 'settings' => $settings,
             ],
             HomepageSectionKey::FeaturedProducts->value => [
-                'products' => $this->getProducts($settings, 'featured', $productPool['featured'] ?? null),
+                'products' => $this->getProducts($settings, 'featured'),
                 'settings' => $settings,
             ],
             HomepageSectionKey::NewArrivals->value => [
-                'products' => $productPool['new_arrivals'] ?? Product::query()
+                'products' => $this->cachedProductList('new_arrivals', fn () => Product::query()
                     ->with(['images', 'category'])
                     ->where('status', RecordStatus::Active)
                     ->latest()
                     ->limit($settings['limit'] ?? 8)
-                    ->get(),
+                    ->get()),
                 'settings' => $settings,
             ],
             HomepageSectionKey::FlashSale->value => [
                 'products' => $this->isFlashSaleActive($settings)
-                    ? ($productPool['flash_sale'] ?? $this->getFlashSaleProducts($settings))
+                    ? $this->cachedProductList('flash_sale', fn () => $this->getFlashSaleProducts($settings))
                     : collect(),
                 'settings' => $settings,
                 'active' => $this->isFlashSaleActive($settings),
             ],
             HomepageSectionKey::BestSellers->value => [
-                'products' => $productPool['best_sellers'] ?? Product::query()
+                'products' => $this->cachedProductList('best_sellers', fn () => Product::query()
                     ->with(['images', 'category'])
                     ->where('status', RecordStatus::Active)
                     ->orderByDesc('review_count')
                     ->limit($settings['limit'] ?? 8)
-                    ->get(),
+                    ->get()),
                 'settings' => $settings,
             ],
             HomepageSectionKey::CustomerReviews->value => [
-                'reviews' => Review::query()
-                    ->with(['user', 'product'])
-                    ->where('is_approved', true)
-                    ->latest()
-                    ->limit($settings['limit'] ?? 6)
-                    ->get(),
+                'reviews' => Cache::remember(
+                    'homepage.reviews.'.$this->locale(),
+                    $this->cache->ttl(),
+                    fn () => Review::query()
+                        ->with(['user:id,name', 'product:id,name,slug'])
+                        ->where('is_approved', true)
+                        ->latest()
+                        ->limit($settings['limit'] ?? 6)
+                        ->get()
+                ),
                 'settings' => $settings,
             ],
             HomepageSectionKey::Blog->value => [
-                'posts' => $this->posts->getPublishedFeatured($settings['limit'] ?? 3),
+                'posts' => Cache::remember(
+                    'homepage.blog.'.$this->locale(),
+                    $this->cache->ttl(),
+                    fn () => $this->posts->getPublishedFeatured($settings['limit'] ?? 3)
+                ),
                 'settings' => $settings,
             ],
             HomepageSectionKey::Faq->value => [
@@ -183,18 +226,33 @@ class HomepageBuilderService
         };
     }
 
-    private function getCategories(array $settings): Collection
+    private function cachedProductList(string $poolKey, callable $resolver): Collection
     {
-        $query = Category::query()->where('status', RecordStatus::Active)->orderBy('sort_order');
-
-        if (! empty($settings['category_ids'])) {
-            $query->whereIn('id', $settings['category_ids']);
-        }
-
-        return $query->limit($settings['limit'] ?? 6)->get();
+        return Cache::remember(
+            "homepage.products.{$poolKey}.{$this->locale()}",
+            $this->cache->ttl(),
+            fn () => $resolver()
+        );
     }
 
-    private function getProducts(array $settings, string $type, ?Collection $pool = null): Collection
+    private function getCategories(array $settings): Collection
+    {
+        return Cache::remember(
+            'homepage.categories.'.$this->locale(),
+            $this->cache->ttl(),
+            function () use ($settings) {
+                $query = Category::query()->where('status', RecordStatus::Active)->orderBy('sort_order');
+
+                if (! empty($settings['category_ids'])) {
+                    $query->whereIn('id', $settings['category_ids']);
+                }
+
+                return $query->limit($settings['limit'] ?? 6)->get();
+            }
+        );
+    }
+
+    private function getProducts(array $settings, string $type): Collection
     {
         if (! empty($settings['product_ids'])) {
             return Product::query()
@@ -204,12 +262,8 @@ class HomepageBuilderService
                 ->get();
         }
 
-        if ($type === 'featured' && $pool) {
-            return $pool;
-        }
-
         if ($type === 'featured') {
-            return $this->products->getFeatured($settings['limit'] ?? 8);
+            return $this->cachedProductList('featured', fn () => $this->products->getFeatured($settings['limit'] ?? 8));
         }
 
         return collect();
@@ -293,11 +347,11 @@ class HomepageBuilderService
                 ->values();
         }
 
-        return $this->sections->getEnabledOrdered();
+        return Cache::remember('storefront.homepage_sections', $this->cache->ttl(), fn () => $this->sections->getEnabledOrdered());
     }
 
-    private function model(): HomepageSectionRepositoryInterface
+    private function locale(): string
     {
-        return $this->sections;
+        return app()->getLocale();
     }
 }

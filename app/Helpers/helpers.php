@@ -85,9 +85,9 @@ if (! function_exists('licensed_domain')) {
 }
 
 if (! function_exists('image_url')) {
-    function image_url(?string $path): ?string
+    function image_url(?string $path, string $size = 'large', ?array $variants = null): ?string
     {
-        return app(\App\Services\ImageService::class)->url($path);
+        return app(\App\Services\ImageService::class)->url($path, $size, $variants);
     }
 }
 

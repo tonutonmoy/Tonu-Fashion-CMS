@@ -7,6 +7,7 @@ use App\Repositories\Contracts\BrandRepositoryInterface;
 use App\Repositories\Contracts\CategoryRepositoryInterface;
 use App\Repositories\Contracts\ProductRepositoryInterface;
 use App\Services\SeoService;
+use App\Services\StorefrontCacheService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -20,7 +21,8 @@ class ShopController extends Controller
         private ProductRepositoryInterface $products,
         private CategoryRepositoryInterface $categories,
         private BrandRepositoryInterface $brands,
-        private SeoService $seo
+        private SeoService $seo,
+        private StorefrontCacheService $cache,
     ) {}
 
     public function index(Request $request): View|JsonResponse
@@ -68,7 +70,7 @@ class ShopController extends Controller
 
     private function catalogMeta(): array
     {
-        return Cache::remember('shop.catalog_meta', 600, fn () => [
+        return Cache::remember('shop.catalog_meta', $this->cache->ttl(), fn () => [
             'categories' => $this->categories->getActiveOrdered(),
             'brands' => $this->brands->getActive(),
             'priceBounds' => $this->products->getPriceBounds(),
@@ -84,6 +86,6 @@ class ShopController extends Controller
             return $this->products->paginateShop($filters, $perPage);
         }
 
-        return Cache::remember('shop.products.page1.'.$perPage, 300, fn () => $this->products->paginateShop([], $perPage));
+        return Cache::remember('shop.products.page1.'.$perPage, $this->cache->ttl(), fn () => $this->products->paginateShop([], $perPage));
     }
 }

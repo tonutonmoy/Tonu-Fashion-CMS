@@ -28,6 +28,9 @@ function bootStorefront() {
     if (document.querySelector('.theme-product-card, .theme-section')) {
         import('./storefront-animations');
     }
+    if (document.querySelector('[data-lazy-section]')) {
+        import('./home-lazy').then(({ initHomeLazySections }) => initHomeLazySections());
+    }
 }
 
 onPageLoad(bootStorefront);

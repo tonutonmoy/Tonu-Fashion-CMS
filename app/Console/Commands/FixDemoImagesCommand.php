@@ -27,9 +27,7 @@ class FixDemoImagesCommand extends Command
 
         Cache::forget('homepage.page_data.en');
         Cache::forget('homepage.page_data.bn');
-        Cache::forget('storefront.layout');
-        Cache::forget('shop.catalog_meta');
-        Cache::forget('shop.products.page1.'.config('fashion.pagination.products'));
+        app(\App\Services\StorefrontCacheService::class)->forgetAll();
 
         $hero = HomepageSection::query()->where('section_key', 'hero_slider')->first();
         if ($hero) {

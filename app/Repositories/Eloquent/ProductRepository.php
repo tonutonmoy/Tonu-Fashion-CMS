@@ -7,8 +7,10 @@ use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
 use App\Repositories\Contracts\ProductRepositoryInterface;
+use App\Services\StorefrontCacheService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\Cache;
 
 class ProductRepository extends BaseRepository implements ProductRepositoryInterface
 {
@@ -19,10 +21,12 @@ class ProductRepository extends BaseRepository implements ProductRepositoryInter
 
     public function findBySlug(string $slug): ?Product
     {
-        return $this->model->newQuery()
-            ->with(['images', 'variants', 'category', 'brand', 'approvedReviews.user'])
-            ->where('slug', $slug)
-            ->first();
+        return Cache::remember("product.show.{$slug}", app(StorefrontCacheService::class)->ttl(), function () use ($slug) {
+            return $this->model->newQuery()
+                ->with(['images', 'variants', 'category', 'brand', 'approvedReviews.user:id,name'])
+                ->where('slug', $slug)
+                ->first();
+        });
     }
 
     public function getFeatured(int $limit = 8): Collection
@@ -130,53 +134,58 @@ class ProductRepository extends BaseRepository implements ProductRepositoryInter
 
     public function getPriceBounds(): array
     {
-        $prices = $this->model->newQuery()
-            ->where('status', RecordStatus::Active)
-            ->pluck('effective_price');
+        return Cache::remember('shop.price_bounds', app(StorefrontCacheService::class)->ttl(), function () {
+            $base = $this->model->newQuery()->where('status', RecordStatus::Active);
 
-        if ($prices->isEmpty()) {
-            return ['min' => 0, 'max' => 10000];
-        }
+            $min = (float) ($base->clone()->orderBy('effective_price')->value('effective_price') ?? 0);
+            $max = (float) ($base->clone()->orderByDesc('effective_price')->value('effective_price') ?? 0);
 
-        $min = (int) floor((float) $prices->min());
-        $max = (int) ceil((float) $prices->max());
+            if ($max <= 0) {
+                return ['min' => 0, 'max' => 10000];
+            }
 
-        if ($max <= $min) {
-            $max = $min + 1000;
-        }
+            $minInt = (int) floor($min);
+            $maxInt = (int) ceil($max);
 
-        return ['min' => $min, 'max' => $max];
+            if ($maxInt <= $minInt) {
+                $maxInt = $minInt + 1000;
+            }
+
+            return ['min' => $minInt, 'max' => $maxInt];
+        });
     }
 
     public function getRelated(Product $product, int $limit = 8): Collection
     {
-        $candidates = $this->model->newQuery()
-            ->with(['images', 'category', 'brand'])
-            ->where('status', RecordStatus::Active)
-            ->where('id', '!=', $product->id)
-            ->where(function ($query) use ($product) {
-                $query->where('category_id', $product->category_id);
-                if ($product->brand_id) {
-                    $query->orWhere('brand_id', $product->brand_id);
-                }
-            })
-            ->latest()
-            ->limit(max($limit * 4, 24))
-            ->get();
-
-        if ($candidates->count() < $limit) {
-            $extra = $this->model->newQuery()
-                ->with(['images', 'category', 'brand'])
+        return Cache::remember("product.related.{$product->slug}", app(StorefrontCacheService::class)->ttl(), function () use ($product, $limit) {
+            $candidates = $this->model->newQuery()
+                ->with(['images', 'category:id,name,slug'])
                 ->where('status', RecordStatus::Active)
                 ->where('id', '!=', $product->id)
-                ->whereNotIn('id', $candidates->pluck('id')->all())
+                ->where(function ($query) use ($product) {
+                    $query->where('category_id', $product->category_id);
+                    if ($product->brand_id) {
+                        $query->orWhere('brand_id', $product->brand_id);
+                    }
+                })
                 ->latest()
-                ->limit($limit - $candidates->count())
+                ->limit(max($limit * 3, 16))
                 ->get();
 
-            $candidates = $candidates->concat($extra);
-        }
+            if ($candidates->count() < $limit) {
+                $extra = $this->model->newQuery()
+                    ->with(['images', 'category:id,name,slug'])
+                    ->where('status', RecordStatus::Active)
+                    ->where('id', '!=', $product->id)
+                    ->whereNotIn('id', $candidates->pluck('id')->all())
+                    ->latest()
+                    ->limit($limit - $candidates->count())
+                    ->get();
 
-        return $candidates->shuffle()->take($limit)->values();
+                $candidates = $candidates->concat($extra);
+            }
+
+            return $candidates->take($limit)->values();
+        });
     }
 }

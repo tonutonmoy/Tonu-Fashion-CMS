@@ -10,6 +10,7 @@ use App\Enums\OrderStatus;
 use App\Enums\UserRole;
 use App\Services\ActivityLogService;
 use App\Services\CourierDashboardService;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
@@ -21,8 +22,8 @@ class DashboardController extends Controller
 
     public function index(): View
     {
-        return view('admin.dashboard', [
-            'stats' => [
+        $stats = Cache::remember('admin.dashboard.stats', 120, function () {
+            return [
                 'orders' => Order::query()->count(),
                 'pending_orders' => Order::query()->where('status', OrderStatus::Pending)->count(),
                 'products' => Product::query()->count(),
@@ -38,10 +39,18 @@ class DashboardController extends Controller
                         OrderStatus::Picked,
                     ])
                     ->sum('total'),
-            ],
-            'courier' => $this->courierStats->stats(),
+            ];
+        });
+
+        return view('admin.dashboard', [
+            'stats' => $stats,
+            'courier' => Cache::remember('admin.dashboard.courier', 120, fn () => $this->courierStats->stats()),
             'activityLogs' => $this->activity->recent(8),
-            'recentOrders' => Order::query()->with(['user', 'courierParcel'])->latest()->limit(10)->get(),
+            'recentOrders' => Cache::remember('admin.dashboard.recent_orders', 60, fn () => Order::query()
+                ->with(['user:id,name', 'courierParcel:id,order_id,current_status'])
+                ->latest()
+                ->limit(10)
+                ->get()),
         ]);
     }
 }

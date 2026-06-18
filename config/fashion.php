@@ -13,8 +13,11 @@ return [
     'colors' => ['Black', 'White', 'Navy', 'Maroon', 'Red', 'Blue', 'Green', 'Gray', 'Beige', 'Pink'],
     'image' => [
         'product_max_width' => 1200,
-        'product_quality' => 85,
+        'large_width' => 1200,
+        'medium_width' => 800,
         'thumbnail_width' => 400,
+        'product_quality' => 85,
+        'prefer_webp' => true,
     ],
     'pagination' => [
         'products' => 12,

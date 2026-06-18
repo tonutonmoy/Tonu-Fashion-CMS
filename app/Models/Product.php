@@ -92,10 +92,23 @@ class Product extends BaseModel
 
     public function getPrimaryImageAttribute(): ?string
     {
-        $image = $this->images->firstWhere('is_primary', true)
-            ?? $this->images->first();
+        $image = $this->primaryImageRecord();
 
         return $image?->path;
+    }
+
+    public function getPrimaryImageVariantsAttribute(): ?array
+    {
+        return $this->primaryImageRecord()?->variants;
+    }
+
+    private function primaryImageRecord(): ?ProductImage
+    {
+        if ($this->relationLoaded('images')) {
+            return $this->images->firstWhere('is_primary', true) ?? $this->images->first();
+        }
+
+        return $this->images()->orderByDesc('is_primary')->orderBy('sort_order')->first();
     }
 
     public function isOnSale(): bool

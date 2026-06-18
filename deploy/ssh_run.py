@@ -27,7 +27,7 @@ def run_remote(script_path: Path, extra_env: str = "") -> int:
 
     cmd = f"{extra_env} bash {remote}"
     print(f"Running: {script_path.name}")
-    _, stdout, stderr = c.exec_command(cmd, get_pty=True, timeout=600)
+    _, stdout, stderr = c.exec_command(cmd, get_pty=True, timeout=1800)
     while True:
         line = stdout.readline()
         if not line:

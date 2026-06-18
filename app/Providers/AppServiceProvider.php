@@ -7,9 +7,13 @@ use App\Services\BuilderPublishService;
 use App\Services\CartService;
 use App\Services\FooterBuilderService;
 use App\Services\MenuBuilderService;
+use App\Services\StorefrontCacheService;
 use App\Services\ThemeCustomizerService;
 use App\Services\ThemeService;
+use Illuminate\Cache\Events\CacheHit;
+use Illuminate\Cache\Events\CacheMissed;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
@@ -22,17 +26,27 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        Event::listen(CacheHit::class, function () {
+            app(StorefrontCacheService::class)->recordCacheHit();
+        });
+
+        Event::listen(CacheMissed::class, function () {
+            app(StorefrontCacheService::class)->recordCacheMiss();
+        });
+
+        $ttl = app(StorefrontCacheService::class)->ttl();
+
         $themePatterns = [
             'themes.*',
             'layouts.frontend',
             'layouts.guest',
         ];
 
-        View::composer($themePatterns, function ($view) {
-            $payload = Cache::remember('storefront.layout', 600, function () {
+        View::composer($themePatterns, function ($view) use ($ttl) {
+            $payload = Cache::remember('storefront.layout', $ttl, function () {
                 $theme = app(ThemeService::class);
-                $themeSettings = $theme->settings();
-                $footer = app(FooterBuilderService::class)->get();
+                $themeSettings = Cache::remember('storefront.theme_settings', app(StorefrontCacheService::class)->ttl(), fn () => $theme->settings());
+                $footer = Cache::remember('storefront.footer', app(StorefrontCacheService::class)->ttl(), fn () => app(FooterBuilderService::class)->get());
                 $menus = app(MenuBuilderService::class);
 
                 return [

@@ -12,6 +12,7 @@ use App\Http\Controllers\Admin\CourierModuleController;
 use App\Http\Controllers\Admin\LicenseController;
 use App\Http\Controllers\Admin\MarketingModuleController;
 use App\Http\Controllers\Admin\PaymentModuleController;
+use App\Http\Controllers\Admin\PerformanceController;
 use App\Http\Controllers\Admin\OrderParcelController;
 use App\Http\Controllers\Admin\SupportChatController as AdminSupportChatController;
 use App\Http\Controllers\Admin\TeamUserController;
@@ -59,6 +60,7 @@ Route::get('/blog/{slug}', [BlogController::class, 'show'])->name('blog.show');
 Route::get('/pages/{slug}', [FrontendPageController::class, 'show'])->name('pages.show');
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
+Route::get('/home/section/{key}', [HomeController::class, 'section'])->name('home.section');
 Route::get('/shop', [ShopController::class, 'index'])->name('shop.index');
 Route::get('/search', [ShopController::class, 'search'])->name('shop.search');
 Route::get('/products/{slug}', [ProductController::class, 'show'])->name('products.show');
@@ -202,6 +204,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::get('/settings/store', [SettingController::class, 'storeSettings'])->name('settings.store');
             Route::put('/settings/store', [SettingController::class, 'updateStoreSettings']);
             Route::redirect('/settings/marketing', '/admin/marketing')->name('settings.marketing');
+
+            Route::get('/performance', [PerformanceController::class, 'index'])->name('performance.index');
+            Route::post('/performance/warm-cache', [PerformanceController::class, 'warmCache'])->name('performance.warm-cache');
+            Route::post('/performance/indexes', [PerformanceController::class, 'createIndexes'])->name('performance.indexes');
 
             Route::prefix('payment')->name('payment.')->group(function () {
                 Route::get('/', [PaymentModuleController::class, 'index'])->name('index');

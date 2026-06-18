@@ -13,7 +13,8 @@ class ProductService
 {
     public function __construct(
         private ProductRepositoryInterface $products,
-        private ImageService $images
+        private ImageService $images,
+        private StorefrontCacheService $cache,
     ) {}
 
     public function create(array $data, array $images = [], array $variants = [], array $variantFiles = []): Product
@@ -26,6 +27,7 @@ class ProductService
 
             $this->syncImages($product, $images);
             $this->syncVariants($product, $variants, $variantFiles);
+            $this->bustCaches($product);
 
             return $product->load(['images', 'variants', 'category', 'brand']);
         });
@@ -56,7 +58,7 @@ class ProductService
                 ProductImage::query()
                     ->where('product_id', $product->id)
                     ->whereIn('id', $removeImageIds)
-                    ->each(fn ($img) => $this->images->delete($img->path));
+                    ->each(fn ($img) => $this->images->delete($img->path, $img->variants));
                 ProductImage::query()->whereIn('id', $removeImageIds)->delete();
             }
 
@@ -67,6 +69,7 @@ class ProductService
             }
 
             $this->syncVariants($product, $variants, $variantFiles);
+            $this->bustCaches($product);
 
             return $product->load(['images', 'variants', 'category', 'brand']);
         });
@@ -77,14 +80,27 @@ class ProductService
         $product = $this->products->find($id);
 
         foreach ($product->images as $image) {
-            $this->images->delete($image->path);
+            $this->images->delete($image->path, $image->variants);
         }
 
         foreach ($product->variants as $variant) {
             $this->images->delete($variant->image);
         }
 
-        return $this->products->delete($id);
+        $slug = $product->slug;
+        $deleted = $this->products->delete($id);
+        $this->cache->forgetProduct($slug);
+        $this->cache->forgetHomepage();
+        $this->cache->forgetShop();
+
+        return $deleted;
+    }
+
+    private function bustCaches(Product $product): void
+    {
+        $this->cache->forgetProduct($product->slug);
+        $this->cache->forgetHomepage();
+        $this->cache->forgetShop();
     }
 
     private function resolveSlug(?string $slug, string $name, ?int $exceptId = null): string
@@ -111,27 +127,38 @@ class ProductService
 
     private function syncImages(Product $product, array $images): void
     {
+        if (empty($images)) {
+            return;
+        }
+
+        $product->loadMissing('images');
         $startOrder = (int) ($product->images->max('sort_order') ?? -1) + 1;
+        $hasPrimary = $product->images->contains(fn ($img) => $img->is_primary);
 
         foreach ($images as $index => $file) {
             if (! $file) {
                 continue;
             }
 
-            $path = $this->images->upload(
+            $uploaded = $this->images->uploadWithVariants(
                 $file,
                 'products/'.$product->id,
-                config('fashion.image.product_max_width'),
-                config('fashion.image.product_quality')
+                null,
+                (int) config('fashion.image.product_quality', 85),
             );
 
             ProductImage::query()->create([
                 'product_id' => $product->id,
-                'path' => $path,
+                'path' => $uploaded['path'],
+                'variants' => $uploaded['variants'] ?? [],
                 'alt' => $product->name,
-                'is_primary' => $product->images()->count() === 0 && $index === 0,
+                'is_primary' => ! $hasPrimary && $index === 0,
                 'sort_order' => $startOrder + $index,
             ]);
+
+            if (! $hasPrimary && $index === 0) {
+                $hasPrimary = true;
+            }
         }
     }
 
@@ -187,7 +214,8 @@ class ProductService
             $file = $variantFiles[$index]['image'] ?? null;
 
             if ($file) {
-                $imagePath = $this->images->upload($file, 'products/'.$product->id.'/variants', 800);
+                $uploaded = $this->images->uploadWithVariants($file, 'products/'.$product->id.'/variants', ['large' => 800]);
+                $imagePath = $uploaded['path'];
             }
 
             $payload = [

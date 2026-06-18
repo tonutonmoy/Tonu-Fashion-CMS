@@ -9,6 +9,7 @@ class ProductImage extends BaseModel
     protected $fillable = [
         'product_id',
         'path',
+        'variants',
         'alt',
         'is_primary',
         'sort_order',
@@ -19,6 +20,7 @@ class ProductImage extends BaseModel
         return [
             'is_primary' => 'boolean',
             'sort_order' => 'integer',
+            'variants' => 'array',
         ];
     }
 
@@ -29,6 +31,6 @@ class ProductImage extends BaseModel
 
     public function getUrlAttribute(): string
     {
-        return image_url($this->path) ?? '';
+        return image_url($this->path, 'medium', $this->variants) ?? '';
     }
 }

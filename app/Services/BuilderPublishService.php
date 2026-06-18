@@ -12,6 +12,7 @@ use App\Repositories\Contracts\FooterSettingRepositoryInterface;
 use App\Repositories\Contracts\HeroSlideRepositoryInterface;
 use App\Repositories\Contracts\HomepageSectionRepositoryInterface;
 use App\Repositories\Contracts\ThemeSettingRepositoryInterface;
+use App\Services\StorefrontCacheService;
 use Illuminate\Database\Eloquent\Collection;
 
 class BuilderPublishService
@@ -241,6 +242,8 @@ class BuilderPublishService
             'hero_slides' => null,
             'footer' => null,
         ]);
+
+        app(StorefrontCacheService::class)->forgetAll();
     }
 
     private function publishHomepage(array $sections): void

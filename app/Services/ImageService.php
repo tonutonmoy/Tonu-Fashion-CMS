@@ -26,28 +26,54 @@ class ImageService
         return $this->imageBb->isConfigured();
     }
 
-    public function upload(UploadedFile $file, string $directory, ?int $maxWidth = null, int $quality = 85, bool $preferWebp = false): string
+    public function upload(UploadedFile $file, string $directory, ?int $maxWidth = null, int $quality = 85, bool $preferWebp = true): string
     {
+        return $this->uploadWithVariants($file, $directory, $maxWidth ? ['large' => $maxWidth] : null, $quality, $preferWebp)['path'];
+    }
+
+    /**
+     * @param  array<string, int>|null  $sizes  e.g. ['thumb' => 400, 'medium' => 800, 'large' => 1200]
+     * @return array{path: string, variants: array<string, string>}
+     */
+    public function uploadWithVariants(
+        UploadedFile $file,
+        string $directory,
+        ?array $sizes = null,
+        int $quality = 85,
+        ?bool $preferWebp = null,
+    ): array {
+        $preferWebp ??= (bool) config('fashion.image.prefer_webp', true);
+        $sizes ??= [
+            'thumb' => (int) config('fashion.image.thumbnail_width', 400),
+            'medium' => (int) config('fashion.image.medium_width', 800),
+            'large' => (int) config('fashion.image.large_width', 1200),
+        ];
+
         if ($this->usesRemoteStorage()) {
-            return $this->uploadToImageBb($file, $directory, $maxWidth, $quality, $preferWebp);
+            $large = max($sizes);
+            $url = $this->uploadToImageBb($file, $directory, $large, $quality, $preferWebp);
+
+            return ['path' => $url, 'variants' => ['thumb' => $url, 'medium' => $url, 'large' => $url]];
         }
 
-        return $this->uploadLocally($file, $directory, $maxWidth, $quality, $preferWebp);
+        return $this->uploadLocallyWithVariants($file, $directory, $sizes, $quality, $preferWebp);
     }
 
-    public function delete(?string $path): void
+    public function delete(?string $path, ?array $variants = null): void
     {
-        if (! $path || $this->isRemoteUrl($path)) {
-            return;
-        }
+        $this->deletePath($path);
 
-        if (Storage::disk('public')->exists($path)) {
-            Storage::disk('public')->delete($path);
+        foreach ($variants ?? [] as $variantPath) {
+            $this->deletePath($variantPath);
         }
     }
 
-    public function url(?string $path): ?string
+    public function url(?string $path, string $size = 'large', ?array $variants = null): ?string
     {
+        if ($variants && ! empty($variants[$size])) {
+            $path = $variants[$size];
+        }
+
         if (! $path) {
             return asset('images/placeholder-product.svg');
         }
@@ -64,7 +90,11 @@ class ImageService
             return asset($path);
         }
 
-        return Storage::disk('public')->url($path);
+        if (Storage::disk('public')->exists($path)) {
+            return Storage::disk('public')->url($path);
+        }
+
+        return asset('images/placeholder-product.svg');
     }
 
     private function isBrokenDemoUrl(string $path): bool
@@ -80,8 +110,17 @@ class ImageService
         return str_starts_with($path, 'http://') || str_starts_with($path, 'https://');
     }
 
-    private function uploadLocally(UploadedFile $file, string $directory, ?int $maxWidth, int $quality, bool $preferWebp): string
-    {
+    /**
+     * @param  array<string, int>  $sizes
+     * @return array{path: string, variants: array<string, string>}
+     */
+    private function uploadLocallyWithVariants(
+        UploadedFile $file,
+        string $directory,
+        array $sizes,
+        int $quality,
+        bool $preferWebp,
+    ): array {
         $mime = $file->getMimeType() ?? '';
         $isRaster = str_starts_with($mime, 'image/') && ! in_array($mime, ['image/svg+xml', 'image/gif'], true);
 
@@ -93,35 +132,43 @@ class ImageService
                 throw new \RuntimeException('Could not save file to storage. Run php artisan storage:link if needed.');
             }
 
-            return trim($directory, '/').'/'.$filename;
+            $path = trim($directory, '/').'/'.$filename;
+
+            return ['path' => $path, 'variants' => ['thumb' => $path, 'medium' => $path, 'large' => $path]];
         }
 
-        $originalExt = strtolower($file->getClientOriginalExtension() ?: 'jpg');
-        $ext = ($preferWebp && function_exists('imagewebp')) ? 'webp' : $originalExt;
-        if (! in_array($ext, ['jpg', 'jpeg', 'png', 'webp', 'gif'], true)) {
-            $ext = 'jpg';
+        $ext = ($preferWebp && function_exists('imagewebp')) ? 'webp' : strtolower($file->getClientOriginalExtension() ?: 'jpg');
+        if (! in_array($ext, ['jpg', 'jpeg', 'png', 'webp'], true)) {
+            $ext = 'webp';
         }
 
-        $filename = Str::uuid().'.'.$ext;
-        $path = trim($directory, '/').'/'.$filename;
+        $base = (string) Str::uuid();
+        $dir = trim($directory, '/');
+        $variants = [];
         $image = Image::read($file);
 
-        if ($maxWidth) {
-            $image = $image->scaleDown(width: $maxWidth);
+        foreach ($sizes as $label => $width) {
+            $filename = $label === 'large' ? "{$base}.{$ext}" : "{$base}_{$label}.{$ext}";
+            $path = "{$dir}/{$filename}";
+            $scaled = $image->scaleDown(width: $width);
+
+            $encoded = match ($ext) {
+                'webp' => (string) $scaled->toWebp($quality),
+                'png' => (string) $scaled->toPng(),
+                default => (string) $scaled->toJpeg($quality),
+            };
+
+            if (! Storage::disk('public')->put($path, $encoded)) {
+                throw new \RuntimeException('Could not save image to storage. Run php artisan storage:link if needed.');
+            }
+
+            $variants[$label] = $path;
         }
 
-        $encoded = match ($ext) {
-            'webp' => (string) $image->toWebp($quality),
-            'png' => (string) $image->toPng(),
-            'gif' => (string) $image->toGif(),
-            default => (string) $image->toJpeg($quality),
-        };
-
-        if (! Storage::disk('public')->put($path, $encoded)) {
-            throw new \RuntimeException('Could not save image to storage. Run php artisan storage:link if needed.');
-        }
-
-        return $path;
+        return [
+            'path' => $variants['large'] ?? reset($variants),
+            'variants' => $variants,
+        ];
     }
 
     private function uploadToImageBb(UploadedFile $file, string $directory, ?int $maxWidth, int $quality, bool $preferWebp): string
@@ -145,5 +192,16 @@ class ImageService
         $name = Str::slug(str_replace('/', '-', trim($directory, '/'))) ?: 'upload';
 
         return $this->imageBb->upload($binary, $name);
+    }
+
+    private function deletePath(?string $path): void
+    {
+        if (! $path || $this->isRemoteUrl($path)) {
+            return;
+        }
+
+        if (Storage::disk('public')->exists($path)) {
+            Storage::disk('public')->delete($path);
+        }
     }
 }
