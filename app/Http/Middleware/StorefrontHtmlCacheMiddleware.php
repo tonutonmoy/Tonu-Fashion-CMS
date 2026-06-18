@@ -62,7 +62,7 @@ class StorefrontHtmlCacheMiddleware
             return false;
         }
 
-        if ($route === 'shop.index' && $request->query()->isNotEmpty()) {
+        if ($route === 'shop.index' && ! empty($request->query())) {
             return false;
         }
 
