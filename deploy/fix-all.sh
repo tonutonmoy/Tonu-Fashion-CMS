@@ -13,6 +13,8 @@ git reset --hard origin/main
 mkdir -p storage/framework/{cache/data,sessions,views} storage/logs bootstrap/cache
 chmod -R 775 storage bootstrap/cache
 chown -R www-data:www-data storage bootstrap/cache
+# Ensure file cache can create nested hash directories
+find storage/framework/cache/data -type d -exec chmod 775 {} \; 2>/dev/null || true
 
 grep -q PERFORMANCE_PROFILING .env || echo "PERFORMANCE_PROFILING=false" >> .env
 sed -i 's/PERFORMANCE_PROFILING=true/PERFORMANCE_PROFILING=false/' .env

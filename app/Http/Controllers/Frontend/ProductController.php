@@ -14,7 +14,6 @@ use App\Services\WishlistService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\View\View;
 
 class ProductController extends Controller
@@ -37,11 +36,11 @@ class ProductController extends Controller
             abort(404);
         }
 
-        $eventId = Cache::remember(
-            'product.view_event.'.$product->id.'.'.session()->getId(),
-            300,
-            fn () => (string) \Illuminate\Support\Str::uuid()
-        );
+        $sessionKey = 'product.view_event.'.$product->id;
+        if (! session()->has($sessionKey)) {
+            session()->put($sessionKey, (string) \Illuminate\Support\Str::uuid());
+        }
+        $eventId = session($sessionKey);
 
         dispatch(function () use ($product) {
             app(\App\Services\MarketingEventService::class)->trackViewContent($product);
