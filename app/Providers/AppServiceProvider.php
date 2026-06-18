@@ -30,13 +30,20 @@ class AppServiceProvider extends ServiceProvider
             \Illuminate\Support\Facades\URL::forceScheme('https');
         }
 
-        Event::listen(CacheHit::class, function () {
-            app(StorefrontCacheService::class)->recordCacheHit();
-        });
+        if (config('performance.profiling')) {
+            Event::listen(CacheHit::class, function () {
+                app(StorefrontCacheService::class)->recordCacheHit();
+            });
 
-        Event::listen(CacheMissed::class, function () {
-            app(StorefrontCacheService::class)->recordCacheMiss();
-        });
+            Event::listen(CacheMissed::class, function () {
+                app(StorefrontCacheService::class)->recordCacheMiss();
+            });
+        }
+
+        $cacheData = storage_path('framework/cache/data');
+        if (! is_dir($cacheData)) {
+            @mkdir($cacheData, 0775, true);
+        }
 
         $ttl = app(StorefrontCacheService::class)->ttl();
 

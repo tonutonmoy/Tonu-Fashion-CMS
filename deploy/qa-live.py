@@ -118,11 +118,12 @@ page("Product detail", "/products/demo-product-1-1", ["theme-product", "Demo Pro
 page("Blog", "/blog", ["blog", "Fashion"], [])
 page("Cart page", "/cart", ["cart", "Cart"], [])
 page("Sitemap", "/sitemap.xml", ["<urlset", "<loc>"], [])
-page("Robots", "/robots.txt", ["User-agent"], [])
+page("Robots", "/robots.txt", ["User-agent", "Sitemap"], [])
+page("Admin login", "/admin/login", ["Admin", "login", "password"], [])
 
 # --- API endpoints ---
 api_json("Cart API", "/api/cart", expect_keys=["items", "count", "subtotal"])
-api_json("BD Divisions", "/api/bd/divisions", expect_keys=[])  # array ok
+api_json("BD Divisions", "/api/bd/divisions", expect_keys=[])
 code, body, ms, _ = req("GET", "/api/bd/divisions", accept="application/json")
 is_list = code == 200 and body.strip().startswith("[")
 results.append(
@@ -146,6 +147,17 @@ results.append(
         "API: Shop AJAX filter",
         "PASS" if shop_ajax else "FAIL",
         f"{code} {ms:.0f}ms has html={shop_ajax}",
+        ms,
+    )
+)
+
+code, body, ms, _ = req("GET", "/home/section/new_arrivals", accept="application/json")
+lazy_ok = code == 200 and '"html"' in body
+results.append(
+    Result(
+        "API: Home lazy section",
+        "PASS" if lazy_ok else "FAIL",
+        f"{code} {ms:.0f}ms",
         ms,
     )
 )

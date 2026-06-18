@@ -17,6 +17,7 @@ use App\Services\HeroBuilderService;
 use App\Services\HomepageBuilderService;
 use App\Services\ImageService;
 use App\Services\ThemeCustomizerService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -170,7 +171,7 @@ class ThemeController extends Controller
         ]);
     }
 
-    public function updateHero(HeroBuilderRequest $request): RedirectResponse
+    public function updateHero(HeroBuilderRequest $request): RedirectResponse|JsonResponse
     {
         try {
             $config = $this->hero->update(

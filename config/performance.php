@@ -3,7 +3,7 @@
 return [
     'cache_ttl' => (int) env('STOREFRONT_CACHE_TTL', 3600),
 
-    'profiling' => (bool) env('PERFORMANCE_PROFILING', true),
+    'profiling' => (bool) env('PERFORMANCE_PROFILING', false),
 
     'sample_limit' => (int) env('PERFORMANCE_SAMPLE_LIMIT', 100),
 
