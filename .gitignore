@@ -4,9 +4,7 @@
 /public/build/
 /public/hot
 /public/storage
-.env
-.env.*
-!.env.example
+
 /storage/*.key
 /storage/pail
 /storage/app/installed
