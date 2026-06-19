@@ -7,7 +7,7 @@
     </div>
     <div class="flex items-center gap-2 sm:gap-3 shrink-0">
         <x-color-mode-toggle />
-        <a href="{{ route('home') }}" target="_blank" class="text-xs sm:text-sm text-gray-600 hover:text-gray-900 hidden sm:inline">{{ __('admin.view_store') }}</a>
+        <a href="{{ route('home') }}" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 text-xs sm:text-sm text-gray-600 hover:text-gray-900 font-medium px-2 py-1 rounded-lg hover:bg-gray-100" data-turbo="false">{{ __('admin.view_store') }}</a>
         <form method="POST" action="{{ route('logout') }}">@csrf<button type="submit" class="text-xs sm:text-sm text-red-600 hover:text-red-700">{{ __('common.logout') }}</button></form>
     </div>
 </header>

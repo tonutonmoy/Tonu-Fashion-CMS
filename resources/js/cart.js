@@ -122,6 +122,11 @@ const bindCartSidebarEvents = () => {
             return;
         }
 
+        if (e.target.closest('#cart-sidebar a[href*="checkout"], #cart-sidebar [data-close-cart]')) {
+            closeCartSidebar();
+            return;
+        }
+
         const btn = e.target.closest('#cart-sidebar-items button');
         if (!btn) return;
 
@@ -147,6 +152,10 @@ const bindCartSidebarEvents = () => {
         const form = e.target.closest('form[data-add-to-cart]');
         if (!form) return;
         e.preventDefault();
+        if (!resolveProductVariant(form)) {
+            alert('Please select size and color.');
+            return;
+        }
         const formData = new FormData(form);
         const data = await cartApi.add(formData);
         renderCartSidebar(data);
@@ -177,12 +186,39 @@ const redirectToCheckout = (url) => {
 
 const getProductForm = (trigger) => trigger?.closest('form') || document.getElementById('product-add-form');
 
+const resolveProductVariant = (form) => {
+    const variantInput = form.querySelector('[data-variant-id]') || form.querySelector('input[name="product_variant_id"]');
+    if (!variantInput) {
+        return true;
+    }
+
+    if (variantInput.value) {
+        return true;
+    }
+
+    const root = form.querySelector('[data-product-variants]');
+    const hasSizePicker = (root?.querySelector('[data-size-group]')?.children.length ?? 0) > 0;
+    const hasColorPicker = (root?.querySelector('[data-color-group]')?.children.length ?? 0) > 0;
+
+    if (hasSizePicker || hasColorPicker) {
+        return false;
+    }
+
+    const raw = root?.dataset.variants || (window.productVariants ? JSON.stringify(window.productVariants) : '[]');
+    const variants = JSON.parse(raw || '[]');
+    if (variants.length > 0) {
+        variantInput.value = variants[0].id;
+        return true;
+    }
+
+    return !variantInput.required;
+};
+
 const buyNow = async (trigger) => {
     const form = getProductForm(trigger);
     if (!form) return;
 
-    const variantInput = form.querySelector('[data-variant-id]');
-    if (variantInput && !variantInput.value) {
+    if (!resolveProductVariant(form)) {
         alert('Please select size and color.');
         return;
     }

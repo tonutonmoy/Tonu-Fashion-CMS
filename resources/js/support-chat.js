@@ -445,9 +445,7 @@ function createSupportChat(root) {
 
 export function initSupportChat() {
     const root = document.getElementById('support-chat-widget');
-    if (!root) return;
-
-    if (root.dataset.chatReady === '1' && activeChat) {
+    if (!root) {
         return;
     }
 
@@ -456,8 +454,9 @@ export function initSupportChat() {
         activeChat = null;
     }
 
-    root.dataset.chatReady = '1';
+    root.removeAttribute('data-chat-ready');
     activeChat = createSupportChat(root);
+    root.dataset.chatReady = '1';
 }
 
 onPageLoad(() => {

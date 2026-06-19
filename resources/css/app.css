@@ -883,8 +883,39 @@
     @apply bg-gray-900 border-gray-800 text-gray-100;
 }
 
-.theme-body.theme-mode-dark .input {
+.theme-body.theme-mode-dark .input:not(.checkout-input) {
     @apply bg-gray-800 border-gray-700 text-gray-100 placeholder:text-gray-500;
+}
+
+.theme-body.theme-mode-dark .theme-icon-btn:hover,
+.theme-body.theme-mode-dark .theme-icon-btn:active,
+.theme-body.theme-mode-dark .theme-icon-btn:focus,
+.theme-body.theme-mode-dark .theme-icon-btn:focus-visible,
+.theme-body.theme-mode-dark .theme-color-mode-single:hover,
+.theme-body.theme-mode-dark .theme-color-mode-single:active,
+.theme-body.theme-mode-dark .theme-color-mode-single:focus,
+.theme-body.theme-mode-dark .theme-color-mode-single:focus-visible {
+    background-color: rgba(255, 255, 255, 0.08) !important;
+    color: #f3f4f6 !important;
+}
+
+.theme-body.theme-mode-dark .theme-header-search-mobile .input,
+.theme-body.theme-mode-dark .checkout-input,
+.theme-body.theme-mode-dark .checkout-delivery-option,
+.theme-body.theme-mode-dark .btn-secondary,
+.theme-body.theme-mode-dark #cart-sidebar {
+    background-color: #fff;
+    border-color: #d1d5db;
+    color: #111827;
+}
+
+.theme-body.theme-mode-dark .theme-header-search-mobile .input::placeholder,
+.theme-body.theme-mode-dark .checkout-input::placeholder {
+    color: #4b5563;
+}
+
+.theme-body.theme-mode-dark #cart-sidebar .text-gray-500 {
+    color: #4b5563;
 }
 
 .theme-body.theme-mode-dark #mobile-menu {
@@ -1014,11 +1045,11 @@
 }
 
 .checkout-line-items {
-    @apply space-y-4 mb-5 max-h-64 overflow-y-auto;
+    @apply space-y-5 mb-5 max-h-72 overflow-y-auto py-3 px-2;
 }
 
 .checkout-line-item {
-    @apply flex items-start gap-3;
+    @apply flex items-start gap-3 py-3 px-2;
 }
 
 .checkout-line-thumb-wrap {
@@ -1106,11 +1137,11 @@
 }
 
 .theme-body.theme-mode-dark .checkout-input {
-    @apply bg-gray-900 border-gray-700 text-gray-100 focus:border-gray-400 focus:ring-gray-400;
+    @apply bg-white border-gray-300 text-gray-900 focus:border-gray-900 focus:ring-gray-900 placeholder:text-gray-600;
 }
 
 .theme-body.theme-mode-dark .checkout-delivery-option {
-    @apply bg-gray-900 border-gray-700 hover:border-gray-500;
+    @apply bg-white border-gray-300 text-gray-900 hover:border-gray-900;
 }
 
 .theme-body.theme-mode-dark .checkout-delivery-option:has(input:checked) {

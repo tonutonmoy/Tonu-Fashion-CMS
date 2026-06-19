@@ -11,6 +11,11 @@
         'image' => $v->image ? image_url($v->image) : null,
         'stock' => $v->stock,
     ]);
+    $sizeOptions = $activeVariants->pluck('size')->filter()->unique()->values();
+    $colorOptions = $activeVariants->pluck('color')->filter()->unique()->values();
+    $showVariantPicker = $activeVariants->count() > 1
+        && ($sizeOptions->isNotEmpty() || $colorOptions->isNotEmpty());
+    $autoVariant = $activeVariants->count() === 1 ? $activeVariants->first() : null;
 @endphp
 
 <div class="theme-container py-4 sm:py-8 pb-24 lg:pb-8">
@@ -87,21 +92,27 @@
                 <input type="hidden" name="product_id" value="{{ $product->id }}">
 
                 @if($activeVariants->isNotEmpty())
+                    @if($showVariantPicker)
                     <div class="space-y-4" data-product-variants data-variants='@json($variantPayload)'>
-                        @if($activeVariants->pluck('size')->filter()->unique()->isNotEmpty())
+                        @if($sizeOptions->isNotEmpty())
                             <div>
                                 <p class="text-sm font-medium mb-2">Size</p>
                                 <div class="flex flex-wrap gap-2" data-size-group></div>
                             </div>
                         @endif
-                        @if($activeVariants->pluck('color')->filter()->unique()->isNotEmpty())
+                        @if($colorOptions->isNotEmpty())
                             <div>
                                 <p class="text-sm font-medium mb-2">Color</p>
                                 <div class="flex flex-wrap gap-2" data-color-group></div>
                             </div>
                         @endif
-                        <input type="hidden" name="product_variant_id" data-variant-id required>
+                        <input type="hidden" name="product_variant_id" data-variant-id>
                     </div>
+                    @elseif($autoVariant)
+                        <input type="hidden" name="product_variant_id" value="{{ $autoVariant->id }}">
+                    @else
+                        <input type="hidden" name="product_variant_id" value="{{ $activeVariants->first()->id }}">
+                    @endif
                 @endif
 
                 <div class="flex items-center gap-3">

@@ -14,7 +14,7 @@
             <span>Subtotal</span>
             <span id="cart-sidebar-subtotal">৳0</span>
         </div>
-        <a href="{{ route('checkout.index') }}" class="btn-primary w-full text-center block">Checkout</a>
+        <a href="{{ route('checkout.index') }}" class="btn-primary w-full text-center block" data-close-cart>Checkout</a>
         <a href="{{ route('cart.index') }}" class="btn-secondary w-full text-center block">View full cart</a>
     </div>
 </aside>

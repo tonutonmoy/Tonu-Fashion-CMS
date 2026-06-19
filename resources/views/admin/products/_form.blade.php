@@ -138,7 +138,10 @@
     </div>
 
     <div id="variants" class="space-y-4" data-sizes='@json($sizes)' data-colors='@json($colors)'>
-        @php $variants = old('variants', $product?->variants?->toArray() ?? [['size' => 'M', 'color' => 'Black', 'stock' => 10]]); @endphp
+        @php $variants = old('variants', $product?->variants?->toArray() ?? []); @endphp
+        @if($variants === [])
+            <p class="text-sm text-gray-500">No variants yet. Use the product stock field above for simple products, or add variants for size/color options.</p>
+        @endif
         @foreach($variants as $i => $variant)
         <div class="border border-gray-200 rounded-xl p-4 space-y-3" data-variant-row>
             <div class="flex justify-between items-center">

@@ -24,6 +24,7 @@ export function applyColorMode(mode) {
     body.classList.remove('theme-mode-light', 'theme-mode-dark');
     body.classList.add(`theme-mode-${mode}`);
     body.dataset.colorMode = mode;
+    updateToggleTargets(mode);
 }
 
 function resolveColorMode() {
@@ -32,6 +33,14 @@ function resolveColorMode() {
 
 function syncColorMode() {
     applyColorMode(resolveColorMode());
+}
+
+function updateToggleTargets(mode) {
+    const target = mode === 'dark' ? 'light' : 'dark';
+
+    document.querySelectorAll('[data-color-mode-toggle]').forEach((link) => {
+        link.dataset.colorModeTarget = target;
+    });
 }
 
 async function toggleColorMode(targetMode) {
@@ -63,12 +72,9 @@ function bindColorModeToggles() {
 
         event.preventDefault();
 
-        const target = link.dataset.colorModeTarget
-            || link.getAttribute('href')?.match(/color-mode\/(light|dark)/)?.[1];
-
-        if (target) {
-            toggleColorMode(target);
-        }
+        const current = resolveColorMode();
+        const target = current === 'dark' ? 'light' : 'dark';
+        toggleColorMode(target);
     });
 }
 

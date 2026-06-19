@@ -206,10 +206,6 @@ class ProductService
         }
 
         foreach ($variants as $index => $variant) {
-            if (empty($variant['size']) && empty($variant['color'])) {
-                continue;
-            }
-
             $imagePath = null;
             $file = $variantFiles[$index]['image'] ?? null;
 
