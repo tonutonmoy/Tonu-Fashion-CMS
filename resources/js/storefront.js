@@ -44,10 +44,6 @@ function bootStorefront() {
         if (document.getElementById('support-chat-widget')) {
             import('./support-chat');
         }
-
-        if (document.querySelector('.theme-product-card, .theme-section')) {
-            import('./storefront-animations');
-        }
     });
 
     if (document.querySelector('[data-lazy-section]')) {

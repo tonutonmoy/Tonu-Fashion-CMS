@@ -18,6 +18,7 @@ const initMobileNav = () => {
     const close = () => {
         menu.classList.add('translate-x-full');
         overlay?.classList.add('hidden');
+        menu.setAttribute('aria-hidden', 'true');
         lockScroll(false);
         toggle.setAttribute('aria-expanded', 'false');
     };
@@ -25,6 +26,7 @@ const initMobileNav = () => {
     const open = () => {
         menu.classList.remove('translate-x-full');
         overlay?.classList.remove('hidden');
+        menu.setAttribute('aria-hidden', 'false');
         lockScroll(true);
         toggle.setAttribute('aria-expanded', 'true');
     };
