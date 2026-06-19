@@ -35,11 +35,4 @@ class PerformanceController extends Controller
 
         return back()->with('success', 'Storefront cache warmed successfully.');
     }
-
-    public function createIndexes(): RedirectResponse
-    {
-        Artisan::call('mongo:create-indexes');
-
-        return back()->with('success', 'MongoDB indexes created.');
-    }
 }

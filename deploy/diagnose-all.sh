@@ -1,34 +1,22 @@
 #!/usr/bin/env bash
+# Quick health check for Hostinger / MySQL deployment
 set -euo pipefail
-APP_DIR="/var/www/tonu-fashion-cms"
+APP_DIR="${1:-$(cd "$(dirname "$0")/.." && pwd)}"
 cd "$APP_DIR"
 
-echo "=== SERVICES ==="
-systemctl is-active nginx php8.4-fpm 2>/dev/null || systemctl is-active nginx php*-fpm
+echo "=== PHP ==="
+php -v | head -1
 
-echo "=== MONGODB PING ==="
-php artisan tinker --execute="try { DB::connection('mongodb')->getMongoDB()->command(['ping'=>1]); echo 'MONGO_OK'; } catch (Throwable \$e) { echo 'MONGO_FAIL: '.\$e->getMessage(); }" 2>/dev/null || \
-php -r "require 'vendor/autoload.php'; \$app=require 'bootstrap/app.php'; \$app->make('Illuminate\Contracts\Console\Kernel')->bootstrap(); try { Illuminate\Support\Facades\DB::connection('mongodb')->getMongoDB()->command(['ping'=>1]); echo 'MONGO_OK'; } catch (Throwable \$e) { echo 'MONGO_FAIL: '.\$e->getMessage(); }"
-
-echo ""
-echo "=== COUNTS ==="
-php artisan tinker --execute="echo 'products='.App\Models\Product::count().' categories='.App\Models\Category::count().' sections='.App\Models\HomepageSection::where('enabled',true)->count();" 2>/dev/null || true
+echo "=== MySQL connection ==="
+php artisan tinker --execute="try { DB::connection()->getPdo(); echo 'MYSQL_OK'; } catch (Throwable \$e) { echo 'MYSQL_FAIL: '.\$e->getMessage(); }" 2>/dev/null || \
+php -r "require 'vendor/autoload.php'; \$app=require 'bootstrap/app.php'; \$app->make('Illuminate\Contracts\Console\Kernel')->bootstrap(); try { Illuminate\Support\Facades\DB::connection()->getPdo(); echo 'MYSQL_OK'; } catch (Throwable \$e) { echo 'MYSQL_FAIL: '.\$e->getMessage(); }"
 
 echo ""
-echo "=== ENV (masked) ==="
-grep -E '^(APP_URL|DB_CONNECTION|MONGODB_DATABASE|CACHE_STORE|APP_DEBUG)=' .env
+echo "=== Storage link ==="
+test -L public/storage && echo "LINK_OK" || echo "LINK_MISSING (run php artisan storage:link)"
 
-echo ""
-echo "=== PUBLIC BUILD ==="
-ls -la public/build/ 2>/dev/null | head -5 || echo "NO BUILD"
-ls public/build/assets/*storefront* 2>/dev/null | head -3 || echo "NO STOREFRONT JS"
+echo "=== Cache writable ==="
+test -w storage/framework/cache && echo "CACHE_OK" || echo "CACHE_NOT_WRITABLE"
 
-echo ""
-echo "=== HOME SECTION API ==="
-curl -s "http://127.0.0.1/home/section/featured_products" -H "Host: tonu-fashion-cms.tonusoft.com" -H "Accept: application/json" | head -c 300
-echo ""
-
-echo ""
-echo "=== SSL ==="
-certbot certificates 2>/dev/null || echo "no certs"
-ss -tlnp | grep ':443' || echo "443 not listening"
+echo "=== Queue driver ==="
+grep -E '^QUEUE_CONNECTION=' .env 2>/dev/null || echo "QUEUE_CONNECTION not set"

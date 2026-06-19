@@ -2,20 +2,35 @@
 @section('title', 'Database')
 @section('step', 2)
 @section('content')
-<h2 class="text-2xl font-bold mb-2">MongoDB Configuration</h2>
-<p class="text-gray-600 mb-6">Connect to your MongoDB Atlas cluster. We will test the connection before saving to <code class="text-sm bg-gray-100 px-1 rounded">.env</code>.</p>
+<h2 class="text-2xl font-bold mb-2">MySQL Configuration</h2>
+<p class="text-gray-600 mb-6">Connect to your MySQL database (Hostinger, cPanel, or local). We will test the connection before saving to <code class="text-sm bg-gray-100 px-1 rounded">.env</code>.</p>
 
 <form action="{{ route('install.database') }}" method="POST" id="db-form" class="space-y-4">
     @csrf
-    <input type="hidden" name="db_driver" value="mongodb">
-    <div>
-        <label class="label">MongoDB URI</label>
-        <input name="mongodb_uri" value="{{ old('mongodb_uri', $config['mongodb_uri']) }}" class="input w-full" required placeholder="mongodb+srv://user:pass@cluster.mongodb.net">
-        <p class="text-xs text-gray-500 mt-1">Atlas connection string including credentials.</p>
+    <input type="hidden" name="db_driver" value="mysql">
+    <div class="grid md:grid-cols-2 gap-4">
+        <div>
+            <label class="label">Host</label>
+            <input name="db_host" value="{{ old('db_host', $config['db_host'] ?? '127.0.0.1') }}" class="input w-full" required placeholder="127.0.0.1">
+        </div>
+        <div>
+            <label class="label">Port</label>
+            <input name="db_port" value="{{ old('db_port', $config['db_port'] ?? '3306') }}" class="input w-full" required placeholder="3306">
+        </div>
     </div>
     <div>
         <label class="label">Database Name</label>
-        <input name="db_database" value="{{ old('db_database', $config['db_database']) }}" class="input w-full" required placeholder="tonu-fashion-cms">
+        <input name="db_database" value="{{ old('db_database', $config['db_database'] ?? 'fashion_bd') }}" class="input w-full" required placeholder="fashion_bd">
+    </div>
+    <div class="grid md:grid-cols-2 gap-4">
+        <div>
+            <label class="label">Username</label>
+            <input name="db_username" value="{{ old('db_username', $config['db_username'] ?? 'root') }}" class="input w-full" required>
+        </div>
+        <div>
+            <label class="label">Password</label>
+            <input type="password" name="db_password" value="{{ old('db_password', $config['db_password'] ?? '') }}" class="input w-full" autocomplete="new-password">
+        </div>
     </div>
     <p id="db-test-result" class="text-sm hidden"></p>
     <div class="flex flex-wrap gap-3 justify-between pt-4">

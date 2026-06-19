@@ -195,9 +195,8 @@ class HomepageBuilderService
                 'settings' => $settings,
             ],
             HomepageSectionKey::CustomerReviews->value => [
-                'reviews' => Cache::remember(
+                'reviews' => $this->cache->rememberForever(
                     'homepage.reviews.'.$this->locale(),
-                    $this->cache->ttl(),
                     fn () => Review::query()
                         ->with(['user:id,name', 'product:id,name,slug'])
                         ->where('is_approved', true)
@@ -208,9 +207,8 @@ class HomepageBuilderService
                 'settings' => $settings,
             ],
             HomepageSectionKey::Blog->value => [
-                'posts' => Cache::remember(
+                'posts' => $this->cache->rememberForever(
                     'homepage.blog.'.$this->locale(),
-                    $this->cache->ttl(),
                     fn () => $this->posts->getPublishedFeatured($settings['limit'] ?? 3)
                 ),
                 'settings' => $settings,
@@ -228,9 +226,8 @@ class HomepageBuilderService
 
     private function cachedProductList(string $poolKey, callable $resolver): Collection
     {
-        return Cache::remember(
+        return $this->cache->rememberForever(
             "homepage.products.{$poolKey}.{$this->locale()}",
-            $this->cache->ttl(),
             fn () => $resolver()
         );
     }
@@ -347,7 +344,7 @@ class HomepageBuilderService
                 ->values();
         }
 
-        return Cache::remember('storefront.homepage_sections', $this->cache->ttl(), fn () => $this->sections->getEnabledOrdered());
+        return Cache::rememberForever('storefront.homepage_sections', fn () => $this->sections->getEnabledOrdered());
     }
 
     private function locale(): string

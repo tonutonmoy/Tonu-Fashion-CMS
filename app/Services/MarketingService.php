@@ -13,7 +13,7 @@ class MarketingService
 
     public function all(): array
     {
-        return Cache::remember(self::CACHE_KEY, 3600, fn () => [
+        return Cache::rememberForever(self::CACHE_KEY, fn () => [
             'facebook_pixel_id' => $this->settings->get('marketing', 'facebook_pixel_id'),
             'facebook_access_token' => $this->settings->get('marketing', 'facebook_access_token')
                 ?? $this->settings->get('marketing', 'facebook_capi_token'),

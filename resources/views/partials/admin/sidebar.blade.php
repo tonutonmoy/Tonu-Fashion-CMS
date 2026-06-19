@@ -28,6 +28,7 @@
                 ['route' => 'admin.reviews.index', 'match' => 'admin.reviews.*', 'icon' => 'reviews', 'label' => 'Reviews', 'visible' => $user?->canAdmin('store')],
                 ['route' => 'admin.marketing.index', 'match' => 'admin.marketing.*', 'icon' => 'marketing', 'label' => 'Marketing & BD', 'visible' => $user?->canAdmin('settings')],
                 ['route' => 'admin.builder.index', 'match' => 'admin.builder.*,admin.theme.*', 'icon' => 'builder', 'label' => 'Website Builder', 'visible' => $user?->canAdmin('settings')],
+                ['route' => 'admin.backup.index', 'match' => 'admin.backup.*', 'icon' => 'settings', 'label' => 'Backups', 'visible' => $user?->canAdmin('settings')],
                 ['route' => 'admin.performance.index', 'match' => 'admin.performance.*', 'icon' => 'dashboard', 'label' => 'Performance', 'visible' => $user?->canAdmin('settings')],
                 ['route' => 'admin.settings.store', 'match' => 'admin.settings.*', 'icon' => 'settings', 'label' => 'Settings', 'visible' => $user?->canAdmin('settings')],
             ];

@@ -7,8 +7,8 @@ use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductImage;
 use App\Models\ProductVariant;
-use App\Rules\MongoExists;
-use App\Rules\MongoUnique;
+use App\Rules\ModelExists;
+use App\Rules\ModelUnique;
 use Illuminate\Foundation\Http\FormRequest;
 
 class ProductRequest extends FormRequest
@@ -29,13 +29,13 @@ class ProductRequest extends FormRequest
                 'string',
                 'max:255',
                 'alpha_dash',
-                new MongoUnique(Product::class, 'slug', $product?->id),
+                new ModelUnique(Product::class, 'slug', $product?->id),
             ],
             'sku' => [
                 'required',
                 'string',
                 'max:100',
-                new MongoUnique(Product::class, 'sku', $product?->id),
+                new ModelUnique(Product::class, 'sku', $product?->id),
             ],
             'short_description' => ['nullable', 'string', 'max:500'],
             'description' => ['nullable', 'string'],
@@ -44,16 +44,16 @@ class ProductRequest extends FormRequest
             'stock' => ['required', 'integer', 'min:0'],
             'featured' => ['boolean'],
             'free_delivery' => ['boolean'],
-            'category_id' => ['required', new MongoExists(Category::class)],
-            'brand_id' => ['nullable', new MongoExists(Brand::class)],
+            'category_id' => ['required', new ModelExists(Category::class)],
+            'brand_id' => ['nullable', new ModelExists(Brand::class)],
             'status' => ['required', 'in:active,inactive'],
             'meta_title' => ['nullable', 'string', 'max:255'],
             'meta_description' => ['nullable', 'string', 'max:500'],
             'images' => ['nullable', 'array'],
             'images.*' => ['image', 'max:4096'],
-            'primary_image_id' => ['nullable', 'integer', new MongoExists(ProductImage::class)],
+            'primary_image_id' => ['nullable', 'integer', new ModelExists(ProductImage::class)],
             'variants' => ['nullable', 'array'],
-            'variants.*.id' => ['nullable', 'integer', new MongoExists(ProductVariant::class)],
+            'variants.*.id' => ['nullable', 'integer', new ModelExists(ProductVariant::class)],
             'variants.*.size' => ['nullable', 'string', 'max:30'],
             'variants.*.color' => ['nullable', 'string', 'max:50'],
             'variants.*.stock' => ['required_with:variants', 'integer', 'min:0'],
@@ -61,7 +61,7 @@ class ProductRequest extends FormRequest
             'variants.*.image' => ['nullable', 'image', 'max:4096'],
             'variants.*.remove_image' => ['nullable', 'boolean'],
             'remove_images' => ['nullable', 'array'],
-            'remove_images.*' => ['integer', new MongoExists(ProductImage::class)],
+            'remove_images.*' => ['integer', new ModelExists(ProductImage::class)],
             'variant_catalog_sizes' => ['nullable', 'array'],
             'variant_catalog_sizes.*' => ['string', 'max:30'],
             'variant_catalog_colors' => ['nullable', 'array'],

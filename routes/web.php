@@ -12,6 +12,7 @@ use App\Http\Controllers\Admin\CourierModuleController;
 use App\Http\Controllers\Admin\LicenseController;
 use App\Http\Controllers\Admin\MarketingModuleController;
 use App\Http\Controllers\Admin\PaymentModuleController;
+use App\Http\Controllers\Admin\BackupController;
 use App\Http\Controllers\Admin\PerformanceController;
 use App\Http\Controllers\Admin\OrderParcelController;
 use App\Http\Controllers\Admin\SupportChatController as AdminSupportChatController;
@@ -208,7 +209,14 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
             Route::get('/performance', [PerformanceController::class, 'index'])->name('performance.index');
             Route::post('/performance/warm-cache', [PerformanceController::class, 'warmCache'])->name('performance.warm-cache');
-            Route::post('/performance/indexes', [PerformanceController::class, 'createIndexes'])->name('performance.indexes');
+
+            Route::prefix('backup')->name('backup.')->group(function () {
+                Route::get('/', [BackupController::class, 'index'])->name('index');
+                Route::post('/', [BackupController::class, 'store'])->name('store');
+                Route::get('/{filename}/download', [BackupController::class, 'download'])->name('download');
+                Route::post('/{filename}/restore', [BackupController::class, 'restore'])->name('restore');
+                Route::delete('/{filename}', [BackupController::class, 'destroy'])->name('destroy');
+            });
 
             Route::prefix('payment')->name('payment.')->group(function () {
                 Route::get('/', [PaymentModuleController::class, 'index'])->name('index');

@@ -14,7 +14,7 @@ class ThemeSettingRepository implements ThemeSettingRepositoryInterface
 
     public function get(): ThemeSetting
     {
-        return Cache::remember(self::CACHE_KEY, 3600, function () {
+        return Cache::rememberForever(self::CACHE_KEY, function () {
             return $this->model->newQuery()->firstOrCreate([], [
                 'active_theme' => config('themes.default'),
                 'primary_color' => '#e11d48',

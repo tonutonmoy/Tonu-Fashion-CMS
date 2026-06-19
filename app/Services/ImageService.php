@@ -9,23 +9,6 @@ use Intervention\Image\Laravel\Facades\Image;
 
 class ImageService
 {
-    public function __construct(private ImageBbService $imageBb) {}
-
-    public function usesRemoteStorage(): bool
-    {
-        $driver = config('images.driver', 'auto');
-
-        if ($driver === 'imgbb') {
-            return $this->imageBb->isConfigured();
-        }
-
-        if ($driver === 'local') {
-            return false;
-        }
-
-        return $this->imageBb->isConfigured();
-    }
-
     public function upload(UploadedFile $file, string $directory, ?int $maxWidth = null, int $quality = 85, bool $preferWebp = true): string
     {
         return $this->uploadWithVariants($file, $directory, $maxWidth ? ['large' => $maxWidth] : null, $quality, $preferWebp)['path'];
@@ -39,22 +22,18 @@ class ImageService
         UploadedFile $file,
         string $directory,
         ?array $sizes = null,
-        int $quality = 85,
+        ?int $quality = null,
         ?bool $preferWebp = null,
     ): array {
-        $preferWebp ??= (bool) config('fashion.image.prefer_webp', true);
-        $sizes ??= [
-            'thumb' => (int) config('fashion.image.thumbnail_width', 400),
-            'medium' => (int) config('fashion.image.medium_width', 800),
-            'large' => (int) config('fashion.image.large_width', 1200),
-        ];
+        $quality ??= (int) config('images.quality', 85);
+        $preferWebp ??= (bool) config('images.prefer_webp', true);
+        $sizes ??= config('images.variants', [
+            'thumb' => 400,
+            'medium' => 800,
+            'large' => 1200,
+        ]);
 
-        if ($this->usesRemoteStorage()) {
-            $large = max($sizes);
-            $url = $this->uploadToImageBb($file, $directory, $large, $quality, $preferWebp);
-
-            return ['path' => $url, 'variants' => ['thumb' => $url, 'medium' => $url, 'large' => $url]];
-        }
+        $directory = $this->normalizeDirectory($directory);
 
         return $this->uploadLocallyWithVariants($file, $directory, $sizes, $quality, $preferWebp);
     }
@@ -78,7 +57,7 @@ class ImageService
             return asset('images/placeholder-product.svg');
         }
 
-        if ($this->isBrokenDemoUrl($path)) {
+        if ($this->isBrokenExternalUrl($path)) {
             return asset('images/placeholder-product.svg');
         }
 
@@ -97,7 +76,7 @@ class ImageService
         return asset('images/placeholder-product.svg');
     }
 
-    private function isBrokenDemoUrl(string $path): bool
+    private function isBrokenExternalUrl(string $path): bool
     {
         return str_contains($path, 'ibb.co')
             || str_contains($path, 'imgbb.com')
@@ -108,6 +87,22 @@ class ImageService
     public function isRemoteUrl(string $path): bool
     {
         return str_starts_with($path, 'http://') || str_starts_with($path, 'https://');
+    }
+
+    private function normalizeDirectory(string $directory): string
+    {
+        $directory = trim($directory, '/');
+        $allowed = config('images.directories', []);
+
+        if ($allowed !== [] && ! in_array($directory, $allowed, true) && ! Str::startsWith($directory, implode('/', $allowed))) {
+            foreach ($allowed as $root) {
+                if (Str::startsWith($directory, $root)) {
+                    return $directory;
+                }
+            }
+        }
+
+        return $directory;
     }
 
     /**
@@ -126,13 +121,13 @@ class ImageService
 
         if (! $isRaster) {
             $filename = Str::uuid().'.'.strtolower($file->getClientOriginalExtension() ?: 'bin');
-            $stored = Storage::disk('public')->putFileAs(trim($directory, '/'), $file, $filename);
+            $stored = Storage::disk('public')->putFileAs($directory, $file, $filename);
 
             if (! $stored) {
                 throw new \RuntimeException('Could not save file to storage. Run php artisan storage:link if needed.');
             }
 
-            $path = trim($directory, '/').'/'.$filename;
+            $path = $directory.'/'.$filename;
 
             return ['path' => $path, 'variants' => ['thumb' => $path, 'medium' => $path, 'large' => $path]];
         }
@@ -143,13 +138,12 @@ class ImageService
         }
 
         $base = (string) Str::uuid();
-        $dir = trim($directory, '/');
         $variants = [];
         $image = Image::read($file);
 
         foreach ($sizes as $label => $width) {
             $filename = $label === 'large' ? "{$base}.{$ext}" : "{$base}_{$label}.{$ext}";
-            $path = "{$dir}/{$filename}";
+            $path = "{$directory}/{$filename}";
             $scaled = $image->scaleDown(width: $width);
 
             $encoded = match ($ext) {
@@ -169,29 +163,6 @@ class ImageService
             'path' => $variants['large'] ?? reset($variants),
             'variants' => $variants,
         ];
-    }
-
-    private function uploadToImageBb(UploadedFile $file, string $directory, ?int $maxWidth, int $quality, bool $preferWebp): string
-    {
-        $mime = $file->getMimeType() ?? '';
-        $isRaster = str_starts_with($mime, 'image/') && $mime !== 'image/svg+xml';
-
-        if ($isRaster && $maxWidth) {
-            try {
-                $image = Image::read($file)->scaleDown(width: $maxWidth);
-                $binary = ($preferWebp && function_exists('imagewebp'))
-                    ? (string) $image->toWebp($quality)
-                    : (string) $image->toJpeg($quality);
-            } catch (\Throwable) {
-                $binary = (string) file_get_contents($file->getRealPath());
-            }
-        } else {
-            $binary = (string) file_get_contents($file->getRealPath());
-        }
-
-        $name = Str::slug(str_replace('/', '-', trim($directory, '/'))) ?: 'upload';
-
-        return $this->imageBb->upload($binary, $name);
     }
 
     private function deletePath(?string $path): void

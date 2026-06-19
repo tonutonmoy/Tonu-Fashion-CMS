@@ -53,6 +53,11 @@ class InstallerService
         }
 
         $checks[] = $this->requirement(
+            'PDO MySQL Extension',
+            extension_loaded('pdo_mysql')
+        );
+
+        $checks[] = $this->requirement(
             'storage/ Writable',
             is_writable(storage_path())
         );
@@ -84,20 +89,23 @@ class InstallerService
     public function testDatabase(array $config): array
     {
         try {
-            $uri = $config['mongodb_uri'] ?? env('MONGODB_URI');
-            $database = $config['db_database'] ?? env('MONGODB_DATABASE', 'tonu-fashion-cms');
-
             config([
                 'database.connections.installer_test' => [
-                    'driver' => 'mongodb',
-                    'dsn' => $uri,
-                    'database' => $database,
+                    'driver' => 'mysql',
+                    'host' => $config['db_host'] ?? '127.0.0.1',
+                    'port' => $config['db_port'] ?? '3306',
+                    'database' => $config['db_database'] ?? 'fashion_bd',
+                    'username' => $config['db_username'] ?? 'root',
+                    'password' => $config['db_password'] ?? '',
+                    'charset' => 'utf8mb4',
+                    'collation' => 'utf8mb4_unicode_ci',
                 ],
             ]);
-            DB::purge('installer_test');
-            DB::connection('installer_test')->getMongoDB()->command(['ping' => 1]);
 
-            return ['success' => true, 'message' => 'MongoDB connection successful.'];
+            DB::purge('installer_test');
+            DB::connection('installer_test')->getPdo();
+
+            return ['success' => true, 'message' => 'MySQL connection successful.'];
         } catch (\Throwable $e) {
             return ['success' => false, 'message' => $e->getMessage()];
         }
@@ -108,12 +116,16 @@ class InstallerService
         $this->ensureEnvFile();
 
         $this->writeEnv([
-            'DB_CONNECTION' => 'mongodb',
-            'MONGODB_URI' => $config['mongodb_uri'] ?? env('MONGODB_URI', ''),
-            'MONGODB_DATABASE' => $config['db_database'] ?? env('MONGODB_DATABASE', 'tonu-fashion-cms'),
+            'DB_CONNECTION' => 'mysql',
+            'DB_HOST' => $config['db_host'] ?? '127.0.0.1',
+            'DB_PORT' => (string) ($config['db_port'] ?? '3306'),
+            'DB_DATABASE' => $config['db_database'] ?? 'fashion_bd',
+            'DB_USERNAME' => $config['db_username'] ?? 'root',
+            'DB_PASSWORD' => $config['db_password'] ?? '',
             'SESSION_DRIVER' => 'file',
             'CACHE_STORE' => 'file',
-            'QUEUE_CONNECTION' => 'sync',
+            'QUEUE_CONNECTION' => 'database',
+            'IMAGE_DRIVER' => 'local',
         ]);
 
         $this->reloadDatabaseConfig();
@@ -180,20 +192,12 @@ class InstallerService
             'CURRENCY_CODE' => $store['currency_code'],
             'SESSION_DRIVER' => 'file',
             'CACHE_STORE' => 'file',
-            'QUEUE_CONNECTION' => 'sync',
+            'QUEUE_CONNECTION' => 'database',
+            'IMAGE_DRIVER' => 'local',
         ]);
 
-        Artisan::call('mongo:install', ['--fresh' => true]);
-        $log[] = 'MongoDB seeded with default data.';
-
-        try {
-            if (! File::exists(public_path('storage'))) {
-                Artisan::call('storage:link');
-                $log[] = 'Storage link created.';
-            }
-        } catch (\Throwable $e) {
-            $log[] = 'Storage link skipped: '.$e->getMessage();
-        }
+        Artisan::call('app:install-database', ['--fresh' => true]);
+        $log[] = 'MySQL migrated and seeded with default data.';
 
         $this->settings->setMany('store', [
             'name' => $store['store_name'],
@@ -285,7 +289,8 @@ class InstallerService
             $this->writeEnv([
                 'SESSION_DRIVER' => 'file',
                 'CACHE_STORE' => 'file',
-                'QUEUE_CONNECTION' => 'sync',
+                'QUEUE_CONNECTION' => 'database',
+                'IMAGE_DRIVER' => 'local',
             ]);
         }
     }
@@ -297,7 +302,7 @@ class InstallerService
         $content = File::get($path);
 
         foreach ($values as $key => $value) {
-            $escaped = $this->escapeEnvValue($value);
+            $escaped = $this->escapeEnvValue((string) $value);
             $pattern = '/^'.preg_quote($key, '/').'=.*$/m';
 
             if (preg_match($pattern, $content)) {
@@ -346,12 +351,15 @@ class InstallerService
         }
 
         config([
-            'database.default' => env('DB_CONNECTION', 'mongodb'),
-            'database.connections.mongodb.dsn' => env('MONGODB_URI'),
-            'database.connections.mongodb.database' => env('MONGODB_DATABASE', 'tonu-fashion-cms'),
+            'database.default' => env('DB_CONNECTION', 'mysql'),
+            'database.connections.mysql.host' => env('DB_HOST', '127.0.0.1'),
+            'database.connections.mysql.port' => env('DB_PORT', '3306'),
+            'database.connections.mysql.database' => env('DB_DATABASE', 'fashion_bd'),
+            'database.connections.mysql.username' => env('DB_USERNAME', 'root'),
+            'database.connections.mysql.password' => env('DB_PASSWORD', ''),
         ]);
 
-        DB::purge('mongodb');
+        DB::purge('mysql');
     }
 
     private function putSession(string $key, array $data): void

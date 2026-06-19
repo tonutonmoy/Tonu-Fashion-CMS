@@ -11,6 +11,16 @@ class StorefrontCacheService
         return (int) config('performance.cache_ttl', 3600);
     }
 
+    public function rememberForever(string $key, callable $callback): mixed
+    {
+        return Cache::rememberForever($key, $callback);
+    }
+
+    public function remember(string $key, callable $callback): mixed
+    {
+        return Cache::remember($key, $this->ttl(), $callback);
+    }
+
     public function localeKey(string $prefix): string
     {
         return $prefix.'.'.app()->getLocale();

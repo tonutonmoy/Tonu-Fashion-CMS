@@ -166,7 +166,7 @@ results.append(
 csrf_code, csrf_body, _, _ = req("GET", "/")
 csrf = re.search(r'name="csrf-token" content="([^"]+)"', csrf_body)
 csrf_token = csrf.group(1) if csrf else ""
-post_data = json.dumps({"name": "QA Tester", "phone": "01700000000"}).encode()
+post_data = json.dumps({"guest_name": "QA Tester", "guest_phone": "01700000000"}).encode()
 code, body, ms, _ = req(
     "POST",
     "/api/support/session",

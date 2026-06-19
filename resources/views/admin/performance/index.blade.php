@@ -14,10 +14,6 @@
                 @csrf
                 <button type="submit" class="btn btn-primary">Warm Cache</button>
             </form>
-            <form method="POST" action="{{ route('admin.performance.indexes') }}">
-                @csrf
-                <button type="submit" class="btn btn-secondary">Create Mongo Indexes</button>
-            </form>
         </div>
     </div>
 

@@ -1,11 +1,24 @@
 <?php
 
 return [
-    'driver' => env('IMAGE_DRIVER', 'auto'),
+    'driver' => env('IMAGE_DRIVER', 'local'),
 
-    'imgbb' => [
-        'api_key' => env('IMAGEBB_API_KEY'),
-        'endpoint' => env('IMAGEBB_API_URL', 'https://api.imgbb.com/1/upload'),
-        'expiration' => env('IMAGEBB_EXPIRATION'),
+    'directories' => [
+        'products',
+        'categories',
+        'brands',
+        'blogs',
+        'hero',
+        'pages',
     ],
+
+    'variants' => [
+        'thumb' => (int) env('IMAGE_THUMB_WIDTH', 400),
+        'medium' => (int) env('IMAGE_MEDIUM_WIDTH', 800),
+        'large' => (int) env('IMAGE_LARGE_WIDTH', 1200),
+    ],
+
+    'quality' => (int) env('IMAGE_QUALITY', 85),
+
+    'prefer_webp' => (bool) env('IMAGE_PREFER_WEBP', true),
 ];

@@ -10,6 +10,39 @@ sleep 1
 git fetch origin main
 git reset --hard origin/main
 
+export COMPOSER_ALLOW_SUPERUSER=1
+composer install --no-dev --optimize-autoloader --no-interaction
+
+# Ensure MySQL is running
+mkdir -p /var/lib/mysql-files
+chown mysql:mysql /var/lib/mysql-files 2>/dev/null || true
+systemctl start mysql 2>/dev/null || true
+
+DB_NAME="${DB_NAME:-tonu_fashion_cms}"
+DB_USER="${DB_USER:-tonu_fashion}"
+DB_PASS="${DB_PASS:-76676239168794ed798da19bde0a31f9}"
+
+mysql -e "CREATE DATABASE IF NOT EXISTS \`${DB_NAME}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" 2>/dev/null || true
+mysql -e "CREATE USER IF NOT EXISTS '${DB_USER}'@'localhost' IDENTIFIED BY '${DB_PASS}';" 2>/dev/null || true
+mysql -e "ALTER USER '${DB_USER}'@'localhost' IDENTIFIED BY '${DB_PASS}';" 2>/dev/null || true
+mysql -e "GRANT ALL PRIVILEGES ON \`${DB_NAME}\`.* TO '${DB_USER}'@'localhost'; FLUSH PRIVILEGES;" 2>/dev/null || true
+
+# Switch .env from MongoDB to MySQL
+if grep -q '^DB_CONNECTION=mongodb' .env 2>/dev/null; then
+  sed -i 's/^DB_CONNECTION=.*/DB_CONNECTION=mysql/' .env
+  grep -q '^DB_HOST=' .env || echo "DB_HOST=127.0.0.1" >> .env
+  grep -q '^DB_PORT=' .env || echo "DB_PORT=3306" >> .env
+  sed -i "s/^DB_DATABASE=.*/DB_DATABASE=${DB_NAME}/" .env
+  grep -q '^DB_USERNAME=' .env || echo "DB_USERNAME=${DB_USER}" >> .env
+  sed -i "s/^DB_USERNAME=.*/DB_USERNAME=${DB_USER}/" .env
+  grep -q '^DB_PASSWORD=' .env || echo "DB_PASSWORD=${DB_PASS}" >> .env
+  sed -i "s/^DB_PASSWORD=.*/DB_PASSWORD=${DB_PASS}/" .env
+fi
+grep -q '^QUEUE_CONNECTION=' .env || echo "QUEUE_CONNECTION=database" >> .env
+sed -i 's/^QUEUE_CONNECTION=sync/QUEUE_CONNECTION=database/' .env
+grep -q '^IMAGE_DRIVER=' .env || echo "IMAGE_DRIVER=local" >> .env
+sed -i 's/^IMAGE_DRIVER=.*/IMAGE_DRIVER=local/' .env
+
 mkdir -p storage/framework/{cache/data,sessions,views} storage/logs bootstrap/cache
 chmod -R 775 storage bootstrap/cache
 chown -R www-data:www-data storage bootstrap/cache
@@ -36,6 +69,17 @@ npm run build 2>/dev/null || true
 chown -R www-data:www-data public/build 2>/dev/null || true
 
 php artisan optimize:clear
+
+# First deploy after MySQL migration: fresh migrate + seed if products table empty
+PRODUCT_COUNT=$(mysql -u"${DB_USER}" -p"${DB_PASS}" "${DB_NAME}" -N -e "SELECT COUNT(*) FROM products;" 2>/dev/null || echo "0")
+if [ "${PRODUCT_COUNT}" = "0" ] || [ "${PRODUCT_COUNT}" = "" ]; then
+  php -d memory_limit=512M artisan app:install-database --fresh --no-interaction || \
+    php -d memory_limit=512M artisan migrate:fresh --seed --force
+else
+  php artisan migrate --force
+fi
+
+php artisan storage:link 2>/dev/null || true
 php artisan config:cache
 php artisan route:cache
 php artisan view:cache

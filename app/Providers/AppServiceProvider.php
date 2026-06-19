@@ -45,7 +45,6 @@ class AppServiceProvider extends ServiceProvider
             @mkdir($cacheData, 0775, true);
         }
 
-        $ttl = app(StorefrontCacheService::class)->ttl();
 
         $themePatterns = [
             'themes.*',
@@ -53,11 +52,12 @@ class AppServiceProvider extends ServiceProvider
             'layouts.guest',
         ];
 
-        View::composer($themePatterns, function ($view) use ($ttl) {
-            $payload = Cache::remember('storefront.layout', $ttl, function () {
+        View::composer($themePatterns, function ($view) {
+            $cache = app(StorefrontCacheService::class);
+            $payload = $cache->rememberForever('storefront.layout', function () use ($cache) {
                 $theme = app(ThemeService::class);
-                $themeSettings = Cache::remember('storefront.theme_settings', app(StorefrontCacheService::class)->ttl(), fn () => $theme->settings());
-                $footer = Cache::remember('storefront.footer', app(StorefrontCacheService::class)->ttl(), fn () => app(FooterBuilderService::class)->get());
+                $themeSettings = $cache->rememberForever('storefront.theme_settings', fn () => $theme->settings());
+                $footer = $cache->rememberForever('storefront.footer', fn () => app(FooterBuilderService::class)->get());
                 $menus = app(MenuBuilderService::class);
 
                 return [

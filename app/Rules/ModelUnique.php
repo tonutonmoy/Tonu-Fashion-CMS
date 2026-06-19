@@ -5,7 +5,7 @@ namespace App\Rules;
 use Closure;
 use Illuminate\Contracts\Validation\ValidationRule;
 
-class MongoUnique implements ValidationRule
+class ModelUnique implements ValidationRule
 {
     public function __construct(
         private string $modelClass,

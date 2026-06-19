@@ -35,7 +35,7 @@ class WarmStorefrontCacheCommand extends Command
 
         app()->setLocale(config('app.locale', 'en'));
 
-        Cache::remember('storefront.layout', $ttl, function () {
+        Cache::rememberForever('storefront.layout', function () {
             $theme = app(\App\Services\ThemeService::class);
 
             return [
@@ -60,7 +60,7 @@ class WarmStorefrontCacheCommand extends Command
         Cache::remember('shop.products.page1.'.$perPage, $ttl, fn () => app(\App\Repositories\Contracts\ProductRepositoryInterface::class)->paginateShop([], $perPage));
         $this->line('  shop.products.page1');
 
-        Cache::remember('storefront.marketing', $ttl, fn () => [
+        Cache::rememberForever('storefront.marketing', fn () => [
             'pixels' => setting('marketing_pixels', []),
             'gtm' => setting('gtm_container_id'),
         ]);

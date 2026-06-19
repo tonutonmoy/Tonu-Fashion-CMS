@@ -14,9 +14,12 @@ class DatabaseConfigRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'db_driver' => ['nullable', 'in:mongodb'],
-            'mongodb_uri' => ['required', 'string', 'max:2048'],
+            'db_driver' => ['nullable', 'in:mysql'],
+            'db_host' => ['required', 'string', 'max:255'],
+            'db_port' => ['required', 'string', 'max:10'],
             'db_database' => ['required', 'string', 'max:255'],
+            'db_username' => ['required', 'string', 'max:255'],
+            'db_password' => ['nullable', 'string', 'max:255'],
         ];
     }
 }

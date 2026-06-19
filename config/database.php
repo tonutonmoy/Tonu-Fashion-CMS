@@ -17,7 +17,7 @@ return [
     |
     */
 
-    'default' => env('DB_CONNECTION', 'mongodb'),
+    'default' => env('DB_CONNECTION', 'mysql'),
 
     /*
     |--------------------------------------------------------------------------
@@ -112,19 +112,6 @@ return [
             'prefix_indexes' => true,
             // 'encrypt' => env('DB_ENCRYPT', 'yes'),
             // 'trust_server_certificate' => env('DB_TRUST_SERVER_CERTIFICATE', 'false'),
-        ],
-
-        'mongodb' => [
-            'driver' => 'mongodb',
-            'dsn' => env('MONGODB_URI', 'mongodb://127.0.0.1:27017'),
-            'database' => env('MONGODB_DATABASE', 'tonu-fashion-cms'),
-            'options' => [
-                'database' => env('MONGODB_AUTH_DATABASE', 'admin'),
-                'maxPoolSize' => (int) env('MONGODB_MAX_POOL_SIZE', 50),
-                'minPoolSize' => (int) env('MONGODB_MIN_POOL_SIZE', 5),
-                'retryWrites' => filter_var(env('MONGODB_RETRY_WRITES', true), FILTER_VALIDATE_BOOL),
-                'compressors' => env('MONGODB_COMPRESSORS', 'zlib'),
-            ],
         ],
 
     ],

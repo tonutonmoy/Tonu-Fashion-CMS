@@ -12,6 +12,13 @@ class Product extends BaseModel
 {
     use HasFactory, HasTranslations;
 
+    protected static function booted(): void
+    {
+        static::saving(function (self $product) {
+            $product->effective_price = $product->sale_price ?? $product->regular_price;
+        });
+    }
+
     protected $fillable = [
         'name',
         'slug',

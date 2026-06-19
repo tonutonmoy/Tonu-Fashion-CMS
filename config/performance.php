@@ -12,17 +12,18 @@ return [
     'homepage_initial_sections' => [
         'hero_slider',
         'categories',
-        'featured_products',
         'new_arrivals',
-        'flash_sale',
-        'best_sellers',
-        'customer_reviews',
-        'blog',
         'faq',
         'newsletter',
     ],
 
-    'homepage_lazy_sections' => [],
+    'homepage_lazy_sections' => [
+        'featured_products',
+        'flash_sale',
+        'customer_reviews',
+        'blog',
+        'best_sellers',
+    ],
 
     'html_cache' => (bool) env('STOREFRONT_HTML_CACHE', true),
 

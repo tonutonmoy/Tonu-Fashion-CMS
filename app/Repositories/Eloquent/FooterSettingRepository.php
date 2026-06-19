@@ -14,7 +14,7 @@ class FooterSettingRepository implements FooterSettingRepositoryInterface
 
     public function get(): FooterSetting
     {
-        return Cache::remember(self::CACHE_KEY, 3600, fn () => $this->model->newQuery()->firstOrCreate([]));
+        return Cache::rememberForever(self::CACHE_KEY, fn () => $this->model->newQuery()->firstOrCreate([]));
     }
 
     public function update(array $data): FooterSetting
