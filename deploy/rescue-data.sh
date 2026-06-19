@@ -25,7 +25,9 @@ if [ "${PRODUCT_COUNT}" -lt 5 ]; then
 fi
 
 chmod -R 2775 storage bootstrap/cache
-chown -R www-data:www-data storage bootstrap/cache
+chown -R www-data:www-data storage bootstrap/cache .env
+rm -f bootstrap/cache/config.php bootstrap/cache/routes-v7.php bootstrap/cache/events.php
+sed -i 's/^DB_CONNECTION=.*/DB_CONNECTION=mysql/' .env
 
 sudo -u www-data php artisan optimize:clear
 sudo -u www-data php -d memory_limit=512M artisan storefront:warm-cache --no-interaction
