@@ -95,13 +95,13 @@ const closeCartSidebar = () => {
 };
 
 const bindCartSidebarEvents = () => {
-    if (document.body.dataset.cartBound) {
+    if (document.documentElement.dataset.cartDelegated === '1') {
         refreshCartCount();
         return;
     }
-    document.body.dataset.cartBound = '1';
+    document.documentElement.dataset.cartDelegated = '1';
 
-    document.body.addEventListener('click', async (e) => {
+    document.addEventListener('click', async (e) => {
         const buyBtn = e.target.closest('[data-buy-now]');
         if (buyBtn) {
             e.preventDefault();
@@ -143,7 +143,7 @@ const bindCartSidebarEvents = () => {
         }
     });
 
-    document.body.addEventListener('submit', async (e) => {
+    document.addEventListener('submit', async (e) => {
         const form = e.target.closest('form[data-add-to-cart]');
         if (!form) return;
         e.preventDefault();

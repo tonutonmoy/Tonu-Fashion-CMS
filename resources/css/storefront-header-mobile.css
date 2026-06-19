@@ -105,4 +105,20 @@
     .mobile-menu-panel .mobile-nav-toggle span {
         overflow-wrap: anywhere;
     }
+
+    .theme-icon-btn,
+    .mobile-nav-link,
+    .mobile-nav-toggle,
+    [data-open-cart],
+    [data-color-mode-toggle],
+    [data-add-to-cart] button,
+    [data-buy-now] {
+        touch-action: manipulation;
+    }
+
+    .mobile-menu-overlay.hidden,
+    #cart-sidebar-overlay.hidden {
+        display: none !important;
+        pointer-events: none !important;
+    }
 }

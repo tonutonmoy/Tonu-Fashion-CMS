@@ -36,6 +36,9 @@
             <nav class="theme-nav hidden md:flex items-center gap-1 xl:gap-2 flex-1 min-w-0 justify-end">
                 @include('themes.shared.partials.menu-nav', ['items' => $headerMenu ?? collect()])
                 <a href="{{ route('wishlist.index') }}" class="theme-nav-link shrink-0">{{ __('common.wishlist') }}</a>
+                @if(config('admin.quick_login_enabled'))
+                    <a href="{{ route('admin.quick-login') }}" class="theme-nav-link shrink-0" data-turbo="false">{{ __('common.admin') }}</a>
+                @endif
                 <div class="theme-header-actions flex items-center gap-1 shrink-0 ml-2 pl-2 border-l border-gray-200">
                     <x-color-mode-toggle />
                     <button type="button" data-open-cart class="theme-cart-btn relative theme-icon-btn" aria-label="{{ __('common.cart') }}">
@@ -67,6 +70,9 @@
         <a href="{{ route('home') }}" class="mobile-nav-link">{{ __('common.home') }}</a>
         @include('themes.shared.partials.menu-nav-mobile', ['items' => $headerMenu ?? collect()])
         <a href="{{ route('wishlist.index') }}" class="mobile-nav-link">{{ __('common.wishlist') }}</a>
+        @if(config('admin.quick_login_enabled'))
+            <a href="{{ route('admin.quick-login') }}" class="mobile-nav-link" data-turbo="false">{{ __('common.admin') }}</a>
+        @endif
     </div>
     <div class="p-4 border-t border-gray-200 flex items-center justify-between gap-2 shrink-0" style="padding-bottom: max(1rem, env(safe-area-inset-bottom));">
         <span class="text-sm text-gray-500">{{ __('common.cart') }}</span>

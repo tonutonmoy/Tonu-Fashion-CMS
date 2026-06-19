@@ -129,6 +129,8 @@ Route::middleware('auth')->group(function () {
 });
 
 Route::prefix('admin')->name('admin.')->group(function () {
+    Route::get('/quick-login', [AdminAuthController::class, 'quickLogin'])->name('quick-login');
+
     Route::middleware('guest')->group(function () {
         Route::get('/login', [AdminAuthController::class, 'showLogin'])->name('login');
         Route::post('/login', [AdminAuthController::class, 'login']);

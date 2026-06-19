@@ -21,6 +21,7 @@ return [
     'dark_mode' => 'Dark mode',
     'light_mode' => 'Light mode',
     'menu' => 'Menu',
+    'admin' => 'Admin',
     'close' => 'Close',
     'save' => 'Save',
     'cancel' => 'Cancel',

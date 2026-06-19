@@ -48,24 +48,27 @@ async function toggleColorMode(targetMode) {
     }
 }
 
-function bindColorModeToggles(root = document) {
-    root.querySelectorAll('[data-color-mode-toggle]').forEach((link) => {
-        if (link.dataset.colorModeBound === '1') {
+function bindColorModeToggles() {
+    if (document.documentElement.dataset.colorModeDelegated === '1') {
+        return;
+    }
+
+    document.documentElement.dataset.colorModeDelegated = '1';
+
+    document.addEventListener('click', (event) => {
+        const link = event.target.closest('[data-color-mode-toggle]');
+        if (!link) {
             return;
         }
 
-        link.dataset.colorModeBound = '1';
+        event.preventDefault();
 
-        link.addEventListener('click', (event) => {
-            event.preventDefault();
+        const target = link.dataset.colorModeTarget
+            || link.getAttribute('href')?.match(/color-mode\/(light|dark)/)?.[1];
 
-            const target = link.dataset.colorModeTarget
-                || link.getAttribute('href')?.match(/color-mode\/(light|dark)/)?.[1];
-
-            if (target) {
-                toggleColorMode(target);
-            }
-        });
+        if (target) {
+            toggleColorMode(target);
+        }
     });
 }
 
