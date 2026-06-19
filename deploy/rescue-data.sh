@@ -4,9 +4,26 @@ APP="/var/www/tonu-fashion-cms"
 cd "$APP"
 git fetch origin main
 git reset --hard origin/main
+
+DB_NAME="${DB_NAME:-tonu_fashion_cms}"
 DB_USER="${DB_USER:-tonu_fashion}"
 DB_PASS="${DB_PASS:-76676239168794ed798da19bde0a31f9}"
-DB_NAME="${DB_NAME:-tonu_fashion_cms}"
+
+set_env() {
+  local key="$1" val="$2"
+  if grep -q "^${key}=" .env; then
+    sed -i "s|^${key}=.*|${key}=${val}|" .env
+  else
+    echo "${key}=${val}" >> .env
+  fi
+}
+
+set_env DB_CONNECTION mysql
+set_env DB_HOST 127.0.0.1
+set_env DB_PORT 3306
+set_env DB_DATABASE "${DB_NAME}"
+set_env DB_USERNAME "${DB_USER}"
+set_env DB_PASSWORD "${DB_PASS}"
 
 PRODUCT_COUNT=$(mysql -u"${DB_USER}" -p"${DB_PASS}" "${DB_NAME}" -N -e "SELECT COUNT(*) FROM products;" 2>/dev/null || echo "0")
 MENU_COUNT=$(mysql -u"${DB_USER}" -p"${DB_PASS}" "${DB_NAME}" -N -e "SELECT COUNT(*) FROM menu_items;" 2>/dev/null || echo "0")
@@ -27,7 +44,6 @@ fi
 chmod -R 2775 storage bootstrap/cache
 chown -R www-data:www-data storage bootstrap/cache .env
 rm -f bootstrap/cache/config.php bootstrap/cache/routes-v7.php bootstrap/cache/events.php
-sed -i 's/^DB_CONNECTION=.*/DB_CONNECTION=mysql/' .env
 
 sudo -u www-data php artisan optimize:clear
 sudo -u www-data php -d memory_limit=512M artisan storefront:warm-cache --no-interaction
