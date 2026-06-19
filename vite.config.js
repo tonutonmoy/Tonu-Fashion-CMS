@@ -6,6 +6,7 @@ export default defineConfig({
         laravel({
             input: [
                 'resources/css/app.css',
+                'resources/css/storefront-header-mobile.css',
                 'resources/js/storefront.js',
                 'resources/js/checkout.js',
                 'resources/js/admin-entry.js',

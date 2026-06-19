@@ -17,3 +17,4 @@
 </style>
 @vite(['resources/css/app.css', 'resources/js/storefront.js'])
 <link rel="stylesheet" href="{{ theme_asset('theme.css') }}">
+@vite(['resources/css/storefront-header-mobile.css'])

@@ -1,0 +1,108 @@
+/* Loads after theme.css — fixes theme header layouts on small screens */
+
+@media (max-width: 767px) {
+    .theme-header-default .theme-header-inner,
+    .theme-header-transparent .theme-header-inner,
+    .theme-header-sticky .theme-header-inner {
+        flex-direction: column !important;
+        flex-wrap: nowrap !important;
+        align-items: stretch !important;
+        gap: 0 !important;
+    }
+
+    .theme-header-default .theme-header-top,
+    .theme-header-transparent .theme-header-top,
+    .theme-header-sticky .theme-header-top,
+    .theme-header-centered .theme-header-top {
+        display: grid !important;
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 0.5rem;
+        width: 100%;
+        min-height: 3.5rem;
+        position: static !important;
+    }
+
+    .theme-header-centered .theme-header-inner {
+        flex-direction: column !important;
+        padding-top: 0 !important;
+        padding-bottom: 0 !important;
+        gap: 0 !important;
+    }
+
+    .theme-header-centered .theme-header-top .theme-logo,
+    .theme-header-centered .theme-header-top .theme-header-logo {
+        margin: 0 !important;
+        justify-self: center;
+        grid-column: 2;
+    }
+
+    .theme-header-centered .theme-header-top #mobile-menu-toggle {
+        position: static !important;
+        grid-column: 1;
+    }
+
+    .theme-header-centered .theme-header-top .theme-header-actions,
+    .theme-header-centered .theme-header-top .theme-header-mobile-actions {
+        position: static !important;
+        grid-column: 3;
+        justify-self: end;
+    }
+
+    .theme-header .theme-nav {
+        display: none !important;
+    }
+
+    .theme-header .theme-header-search:not(.theme-header-search-mobile) {
+        display: none !important;
+    }
+
+    .theme-header-transparent .theme-header-search-mobile,
+    .theme-header-sticky .theme-header-search-mobile {
+        display: block !important;
+    }
+
+    .theme-header-logo .theme-logo-text,
+    .theme-header-logo .theme-logo-img {
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .theme-header-mobile-actions {
+        flex-shrink: 0;
+    }
+
+    #mobile-menu.mobile-menu-panel {
+        left: auto;
+        right: 0;
+        width: min(100vw, 20rem);
+        max-width: 100%;
+        overflow: hidden;
+    }
+
+    #mobile-menu.mobile-menu-panel.translate-x-full {
+        transform: translateX(100%);
+    }
+
+    #mobile-menu.mobile-menu-panel:not(.translate-x-full) {
+        transform: translateX(0);
+    }
+
+    .mobile-menu-scroll {
+        overflow-x: hidden;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .mobile-nav-link {
+        white-space: normal;
+        word-break: break-word;
+        padding-right: 0.75rem;
+    }
+
+    .mobile-menu-panel .mobile-nav-link,
+    .mobile-menu-panel .mobile-nav-toggle span {
+        overflow-wrap: anywhere;
+    }
+}

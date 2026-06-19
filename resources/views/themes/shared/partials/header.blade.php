@@ -56,7 +56,7 @@
 </header>
 
 <div id="mobile-menu-overlay" class="mobile-menu-overlay fixed inset-0 bg-black/50 z-[80] hidden md:hidden" aria-hidden="true"></div>
-<nav id="mobile-menu" class="mobile-menu-panel fixed top-0 left-0 h-full w-[min(100vw,20rem)] max-w-full bg-white z-[90] shadow-2xl transform translate-x-full transition-transform duration-300 md:hidden flex flex-col" aria-label="Mobile navigation" aria-hidden="true">
+<nav id="mobile-menu" class="mobile-menu-panel fixed top-0 right-0 h-full w-[min(100vw,20rem)] max-w-full bg-white z-[90] shadow-2xl transform translate-x-full transition-transform duration-300 md:hidden flex flex-col overflow-hidden" aria-label="Mobile navigation" aria-hidden="true">
     <div class="flex items-center justify-between gap-3 p-4 border-b border-gray-200 shrink-0">
         <span class="font-semibold text-base truncate">{{ $storeSettings['name'] ?? __('common.menu') }}</span>
         <button type="button" id="mobile-menu-close" class="theme-icon-btn shrink-0" aria-label="{{ __('common.close') }}">

@@ -17,7 +17,7 @@
                 </div>
             </div>
         @else
-            <a href="{{ $item->resolvedUrl() }}" class="{{ $class }}" @if($item->open_in_new_tab) target="_blank" rel="noopener" @endif>{{ $item->title }}</a>
+            <a href="{{ $item->resolvedUrl() }}" class="theme-nav-link {{ $class }}" @if($item->open_in_new_tab) target="_blank" rel="noopener" @endif>{{ $item->title }}</a>
         @endif
     @endforeach
 @endif
