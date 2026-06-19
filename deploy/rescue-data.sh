@@ -2,6 +2,8 @@
 set -euo pipefail
 APP="/var/www/tonu-fashion-cms"
 cd "$APP"
+git fetch origin main
+git reset --hard origin/main
 DB_USER="${DB_USER:-tonu_fashion}"
 DB_PASS="${DB_PASS:-76676239168794ed798da19bde0a31f9}"
 DB_NAME="${DB_NAME:-tonu_fashion_cms}"
