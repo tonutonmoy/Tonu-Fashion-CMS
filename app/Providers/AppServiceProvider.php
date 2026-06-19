@@ -44,6 +44,9 @@ class AppServiceProvider extends ServiceProvider
         if (! is_dir($cacheData)) {
             @mkdir($cacheData, 0775, true);
         }
+        if (is_dir($cacheData) && ! is_writable($cacheData)) {
+            @chmod($cacheData, 0775);
+        }
 
 
         $themePatterns = [

@@ -49,10 +49,9 @@ set_env CACHE_STORE file
 set_env SESSION_DRIVER file
 
 mkdir -p storage/framework/{cache/data,sessions,views} storage/logs bootstrap/cache
-chmod -R 775 storage bootstrap/cache
-chown -R www-data:www-data storage bootstrap/cache
-# Ensure file cache can create nested hash directories
-find storage/framework/cache/data -type d -exec chmod 775 {} \; 2>/dev/null || true
+chmod -R 2775 storage bootstrap/cache
+chown -R www-data:www-data storage bootstrap/cache .env
+find storage/framework/cache/data -type f -user root -delete 2>/dev/null || true
 
 grep -q PERFORMANCE_PROFILING .env || echo "PERFORMANCE_PROFILING=false" >> .env
 sed -i 's/PERFORMANCE_PROFILING=true/PERFORMANCE_PROFILING=false/' .env
@@ -73,27 +72,27 @@ sed -i 's/^;*pm.max_spare_servers = .*/pm.max_spare_servers = 4/' "$PHP_POOL" 2>
 npm run build 2>/dev/null || true
 chown -R www-data:www-data public/build 2>/dev/null || true
 
-php artisan optimize:clear
+sudo -u www-data php artisan optimize:clear
 
 # First deploy after MySQL migration: fresh migrate + seed if products table empty
 PRODUCT_COUNT=$(mysql -u"${DB_USER}" -p"${DB_PASS}" "${DB_NAME}" -N -e "SELECT COUNT(*) FROM products;" 2>/dev/null || echo "0")
 if [ "${PRODUCT_COUNT}" = "0" ] || [ "${PRODUCT_COUNT}" = "" ]; then
-  php -d memory_limit=512M artisan app:install-database --fresh --no-interaction || \
-    php -d memory_limit=512M artisan migrate:fresh --seed --force
+  sudo -u www-data php -d memory_limit=512M artisan app:install-database --fresh --no-interaction || \
+    sudo -u www-data php -d memory_limit=512M artisan migrate:fresh --seed --force
 else
-  php artisan migrate --force
+  sudo -u www-data php artisan migrate --force
 fi
 
-php artisan storage:link 2>/dev/null || true
-php artisan config:cache
-php artisan route:cache
-php artisan view:cache
+sudo -u www-data php artisan storage:link 2>/dev/null || true
+sudo -u www-data php artisan config:cache
+sudo -u www-data php artisan route:cache
+sudo -u www-data php artisan view:cache
 
 systemctl restart php8.4-fpm
 systemctl reload nginx
 
-# Warm cache in background so the site stays reachable during deploy
-nohup php -d memory_limit=512M artisan storefront:warm-cache --no-interaction > /tmp/warm-cache.log 2>&1 &
+# Warm cache in background as www-data so cache files are not root-owned
+nohup sudo -u www-data php -d memory_limit=512M artisan storefront:warm-cache --no-interaction > /tmp/warm-cache.log 2>&1 &
 
 SITE="/etc/nginx/sites-available/${DOMAIN}"
 if [ -f "$SITE" ] && ! grep -q 'location /build/' "$SITE"; then
