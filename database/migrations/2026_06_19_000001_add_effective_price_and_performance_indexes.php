@@ -12,8 +12,6 @@ return new class extends Migration
         if (Schema::hasTable('products') && ! Schema::hasColumn('products', 'effective_price')) {
             Schema::table('products', function (Blueprint $table) {
                 $table->decimal('effective_price', 12, 2)->default(0)->after('sale_price');
-                $table->index('effective_price');
-                $table->index('created_at');
             });
 
             DB::table('products')->update([
@@ -21,16 +19,30 @@ return new class extends Migration
             ]);
         }
 
+        if (Schema::hasTable('products')) {
+            $this->addIndexIfMissing('products', 'effective_price');
+            $this->addIndexIfMissing('products', 'created_at');
+        }
+
         if (Schema::hasTable('orders')) {
-            Schema::table('orders', function (Blueprint $table) {
-                if (Schema::hasColumn('orders', 'order_number')) {
-                    $table->index('order_number');
-                }
-                if (Schema::hasColumn('orders', 'customer_phone')) {
-                    $table->index('customer_phone');
-                }
-                $table->index('created_at');
-            });
+            $this->addIndexIfMissing('orders', 'order_number');
+            if (Schema::hasColumn('orders', 'customer_phone')) {
+                $this->addIndexIfMissing('orders', 'customer_phone');
+            }
+            $this->addIndexIfMissing('orders', 'created_at');
+        }
+
+        if (Schema::hasTable('categories')) {
+            $this->addIndexIfMissing('categories', 'slug');
+        }
+
+        if (Schema::hasTable('brands')) {
+            $this->addIndexIfMissing('brands', 'slug');
+        }
+
+        if (Schema::hasTable('posts')) {
+            $this->addIndexIfMissing('posts', 'slug');
+            $this->addIndexIfMissing('posts', 'created_at');
         }
     }
 
@@ -41,5 +53,20 @@ return new class extends Migration
                 $table->dropColumn('effective_price');
             });
         }
+    }
+
+    private function addIndexIfMissing(string $table, string $column): void
+    {
+        $indexName = "{$table}_{$column}_index";
+
+        foreach (Schema::getIndexes($table) as $index) {
+            if (($index['name'] ?? '') === $indexName) {
+                return;
+            }
+        }
+
+        Schema::table($table, function (Blueprint $table) use ($column) {
+            $table->index($column);
+        });
     }
 };
