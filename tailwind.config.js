@@ -5,6 +5,7 @@ export default {
         './resources/**/*.js',
         './app/View/Components/**/*.php',
     ],
+    darkMode: ['class', '.theme-mode-dark'],
     theme: {
         extend: {
             fontFamily: {

@@ -26,7 +26,7 @@
         <span class="text-gray-900">{{ $product->name }}</span>
     </nav>
 
-    <p class="text-xs text-gray-400 mb-4">/{{ $product->slug }}</p>
+    <p class="text-xs text-gray-400 mb-4 hidden sm:block">/{{ $product->slug }}</p>
 
     <div class="theme-product-detail">
         <div class="theme-product-gallery-wrap" data-product-gallery>

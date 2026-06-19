@@ -1,8 +1,4 @@
 #!/usr/bin/env bash
-ss -tlnp | grep nginx || true
-echo "---"
-head -50 /etc/nginx/sites-enabled/tonu-fashion-cms.tonusoft.com
-echo "---"
-certbot certificates 2>/dev/null || true
-echo "---"
-curl -sI http://127.0.0.1/ -H "Host: tonu-fashion-cms.tonusoft.com" | head -5
+set -euo pipefail
+grep -rE 'fastcgi_cache|proxy_cache|microcache' /etc/nginx/sites-enabled/ /etc/nginx/nginx.conf 2>/dev/null | head -30
+cat /etc/nginx/sites-enabled/*tonu* 2>/dev/null || cat /etc/nginx/sites-enabled/default 2>/dev/null | head -80

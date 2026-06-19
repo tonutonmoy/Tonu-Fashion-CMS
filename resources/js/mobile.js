@@ -48,9 +48,10 @@ const initShopFilterDrawer = () => {
     const overlay = document.getElementById('shop-filter-overlay');
     const closeBtn = document.getElementById('shop-filter-close');
 
-    if (!toggle || !panel) {
+    if (!toggle || !panel || toggle.dataset.bound) {
         return;
     }
+    toggle.dataset.bound = '1';
 
     const close = () => {
         panel.classList.remove('is-open');

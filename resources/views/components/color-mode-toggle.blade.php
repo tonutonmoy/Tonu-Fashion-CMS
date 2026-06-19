@@ -11,6 +11,8 @@
     title="{{ $label }}"
     aria-label="{{ $label }}"
     data-color-mode-toggle
+    data-color-mode-target="{{ $target }}"
+    data-turbo="false"
 >
     <x-admin.icon :name="$icon" class="w-5 h-5" />
 </a>

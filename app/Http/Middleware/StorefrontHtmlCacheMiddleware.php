@@ -80,8 +80,9 @@ class StorefrontHtmlCacheMiddleware
     private function cacheKey(Request $request, string $route): string
     {
         $slug = (string) ($request->route('slug') ?? '');
+        $mode = app(\App\Services\ColorModeService::class)->resolve();
 
-        return 'storefront.html.'.$route.'.'.app()->getLocale().'.'.md5($slug);
+        return 'storefront.html.'.$route.'.'.app()->getLocale().'.'.$mode.'.'.md5($slug);
     }
 
     private function hydrateCsrf(string $html): string

@@ -1,9 +1,9 @@
 @extends(theme_layout())
 
 @section('content')
-<div class="theme-container py-8">
-    <h1 class="theme-page-title mb-8">Blog</h1>
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+<div class="theme-container py-4 sm:py-8">
+    <h1 class="theme-page-title mb-6 sm:mb-8">Blog</h1>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         @foreach($posts as $post)
         <article class="card overflow-hidden">
             @if($post->featured_image)

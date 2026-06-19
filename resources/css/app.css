@@ -12,11 +12,14 @@
         min-height: 100dvh;
         display: flex;
         flex-direction: column;
+        overflow-x: hidden;
+        max-width: 100vw;
     }
 
     .theme-main {
         flex: 1 0 auto;
         width: 100%;
+        min-width: 0;
     }
 }
 
@@ -515,6 +518,186 @@
     .theme-product-thumbs .theme-gallery-thumb {
         width: 4rem;
         height: 4rem;
+    }
+
+    .theme-container {
+        padding-left: 0.875rem;
+        padding-right: 0.875rem;
+    }
+
+    .theme-header-top {
+        gap: 0.5rem;
+        min-height: 3.5rem;
+    }
+
+    .theme-header-search-mobile {
+        padding-bottom: 0.75rem !important;
+    }
+
+    .theme-section:not(.theme-hero):not(.is-visible),
+    .theme-product-card:not(.is-visible),
+    .theme-category-card:not(.is-visible),
+    .theme-review-card:not(.is-visible),
+    .theme-blog-card:not(.is-visible) {
+        opacity: 1 !important;
+        transform: none !important;
+    }
+
+    .theme-product-grid {
+        gap: 0.75rem;
+    }
+
+    .theme-product-body {
+        padding: 0.75rem;
+    }
+
+    .theme-product-title {
+        font-size: 0.8125rem;
+    }
+
+    .theme-section-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+
+    .theme-section-title {
+        font-size: 1.25rem;
+        margin-bottom: 1rem;
+    }
+
+    .theme-product-detail {
+        gap: 1.25rem;
+    }
+
+    .theme-page-title {
+        font-size: 1.375rem;
+        line-height: 1.25;
+    }
+
+    .checkout-layout {
+        gap: 1.25rem;
+    }
+
+    .checkout-page {
+        padding-top: 1rem;
+        padding-bottom: 1.5rem;
+    }
+
+    .checkout-summary {
+        position: static;
+        width: 100%;
+    }
+
+    .theme-footer-grid {
+        grid-template-columns: 1fr !important;
+        gap: 1.5rem;
+    }
+
+    .theme-newsletter-form {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .theme-newsletter-form .theme-input,
+    .theme-newsletter-form .theme-btn {
+        width: 100%;
+    }
+
+    #shop-pagination nav a,
+    #shop-pagination nav span {
+        min-width: 2rem;
+        height: 2.25rem;
+        padding-inline: 0.5rem;
+        font-size: 0.8125rem;
+    }
+
+    .theme-breadcrumb {
+        font-size: 0.75rem;
+    }
+
+    .input,
+    .theme-input,
+    .checkout-input,
+    input[type='search'],
+    input[type='tel'],
+    input[type='email'],
+    input[type='number'],
+    select,
+    textarea {
+        font-size: 16px !important;
+    }
+
+    .theme-product-actions {
+        display: none;
+    }
+
+    .mobile-atc-bar {
+        padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+    }
+
+  .checkout-line-item {
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+
+    .checkout-line-price {
+        width: 100%;
+        text-align: right;
+    }
+
+    .checkout-mobile-submit {
+        position: sticky;
+        bottom: 0;
+        z-index: 20;
+        background: #fff;
+        padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+        margin-inline: -0.25rem;
+        padding-inline: 0.25rem;
+    }
+
+    .theme-body.theme-mode-dark .checkout-mobile-submit {
+        background: #030712;
+    }
+
+    #cart-sidebar {
+        max-width: 100%;
+        width: 100%;
+    }
+
+    .cms-content img,
+    .theme-product-full-desc img,
+    .prose img {
+        max-width: 100%;
+        height: auto;
+    }
+
+    .theme-header-centered .theme-nav {
+        display: none !important;
+    }
+
+    .theme-category-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.75rem;
+    }
+
+    .theme-category-img {
+        width: 3.5rem;
+        height: 3.5rem;
+    }
+
+    .theme-flash-sale .theme-section-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .support-widget {
+        bottom: max(5rem, calc(env(safe-area-inset-bottom) + 4.5rem));
+        right: 0.75rem;
+    }
+
+    body:has([data-mobile-atc]) .theme-main {
+        padding-bottom: 5.5rem;
     }
 }
 
