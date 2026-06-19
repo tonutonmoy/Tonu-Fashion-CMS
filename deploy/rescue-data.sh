@@ -13,10 +13,19 @@ MENU_COUNT=$(mysql -u"${DB_USER}" -p"${DB_PASS}" "${DB_NAME}" -N -e "SELECT COUN
 
 echo "products=${PRODUCT_COUNT} menu_items=${MENU_COUNT}"
 
-if [ "${PRODUCT_COUNT}" -lt 5 ] || [ "${MENU_COUNT}" -lt 3 ]; then
-  echo "Seeding demo data..."
-  sudo -u www-data php artisan db:seed --force
+if [ "${MENU_COUNT}" -lt 3 ]; then
+  echo "Seeding CMS menus and theme..."
+  sudo -u www-data php artisan db:seed --class=Database\\Seeders\\CmsSeeder --force
+  sudo -u www-data php artisan db:seed --class=Database\\Seeders\\ThemeSeeder --force
 fi
+
+if [ "${PRODUCT_COUNT}" -lt 5 ]; then
+  echo "Seeding demo catalog..."
+  sudo -u www-data php artisan db:seed --class=Database\\Seeders\\DemoCatalogSeeder --force
+fi
+
+chmod -R 2775 storage bootstrap/cache
+chown -R www-data:www-data storage bootstrap/cache
 
 sudo -u www-data php artisan optimize:clear
 sudo -u www-data php -d memory_limit=512M artisan storefront:warm-cache --no-interaction
