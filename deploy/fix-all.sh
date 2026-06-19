@@ -27,21 +27,26 @@ mysql -e "CREATE USER IF NOT EXISTS '${DB_USER}'@'localhost' IDENTIFIED BY '${DB
 mysql -e "ALTER USER '${DB_USER}'@'localhost' IDENTIFIED BY '${DB_PASS}';" 2>/dev/null || true
 mysql -e "GRANT ALL PRIVILEGES ON \`${DB_NAME}\`.* TO '${DB_USER}'@'localhost'; FLUSH PRIVILEGES;" 2>/dev/null || true
 
-# Switch .env from MongoDB to MySQL
-if grep -q '^DB_CONNECTION=mongodb' .env 2>/dev/null; then
-  sed -i 's/^DB_CONNECTION=.*/DB_CONNECTION=mysql/' .env
-  grep -q '^DB_HOST=' .env || echo "DB_HOST=127.0.0.1" >> .env
-  grep -q '^DB_PORT=' .env || echo "DB_PORT=3306" >> .env
-  sed -i "s/^DB_DATABASE=.*/DB_DATABASE=${DB_NAME}/" .env
-  grep -q '^DB_USERNAME=' .env || echo "DB_USERNAME=${DB_USER}" >> .env
-  sed -i "s/^DB_USERNAME=.*/DB_USERNAME=${DB_USER}/" .env
-  grep -q '^DB_PASSWORD=' .env || echo "DB_PASSWORD=${DB_PASS}" >> .env
-  sed -i "s/^DB_PASSWORD=.*/DB_PASSWORD=${DB_PASS}/" .env
-fi
-grep -q '^QUEUE_CONNECTION=' .env || echo "QUEUE_CONNECTION=database" >> .env
-sed -i 's/^QUEUE_CONNECTION=sync/QUEUE_CONNECTION=database/' .env
-grep -q '^IMAGE_DRIVER=' .env || echo "IMAGE_DRIVER=local" >> .env
-sed -i 's/^IMAGE_DRIVER=.*/IMAGE_DRIVER=local/' .env
+# Ensure MySQL credentials in .env
+set_env() {
+  local key="$1" val="$2"
+  if grep -q "^${key}=" .env; then
+    sed -i "s|^${key}=.*|${key}=${val}|" .env
+  else
+    echo "${key}=${val}" >> .env
+  fi
+}
+
+set_env DB_CONNECTION mysql
+set_env DB_HOST 127.0.0.1
+set_env DB_PORT 3306
+set_env DB_DATABASE "${DB_NAME}"
+set_env DB_USERNAME "${DB_USER}"
+set_env DB_PASSWORD "${DB_PASS}"
+set_env QUEUE_CONNECTION database
+set_env IMAGE_DRIVER local
+set_env CACHE_STORE file
+set_env SESSION_DRIVER file
 
 mkdir -p storage/framework/{cache/data,sessions,views} storage/logs bootstrap/cache
 chmod -R 775 storage bootstrap/cache
