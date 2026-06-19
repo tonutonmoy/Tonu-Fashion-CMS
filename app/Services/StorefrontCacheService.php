@@ -60,6 +60,12 @@ class StorefrontCacheService
         Cache::forget('storefront.layout');
         Cache::forget('storefront.theme_settings');
         Cache::forget('storefront.footer');
+        Cache::forget('theme_settings');
+        Cache::forget('footer_settings');
+
+        foreach (['header', 'footer'] as $location) {
+            Cache::forget("storefront.menu.{$location}");
+        }
     }
 
     public function forgetShop(): void

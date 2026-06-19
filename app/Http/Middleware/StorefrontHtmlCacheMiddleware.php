@@ -28,6 +28,8 @@ class StorefrontHtmlCacheMiddleware
         $key = $this->cacheKey($request, $route);
 
         if ($cached = Cache::get($key)) {
+            app(\App\Services\StorefrontCacheService::class)->recordCacheHit();
+
             return response($this->hydrateCsrf($cached))
                 ->header('Content-Type', 'text/html; charset=UTF-8')
                 ->header('X-Storefront-Cache', 'HIT');

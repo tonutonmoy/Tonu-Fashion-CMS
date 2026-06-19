@@ -24,6 +24,7 @@ class WarmStorefrontCacheCommand extends Command
         @ini_set('memory_limit', '512M');
 
         $this->info('Warming storefront caches…');
+        $cache->forgetAll();
         $ttl = $cache->ttl();
 
         foreach (['en', 'bn'] as $locale) {
@@ -37,14 +38,28 @@ class WarmStorefrontCacheCommand extends Command
 
         Cache::rememberForever('storefront.layout', function () {
             $theme = app(\App\Services\ThemeService::class);
+            $themeSettings = $theme->settings();
+            $footer = app(\App\Services\FooterBuilderService::class)->get();
+            $menus = app(\App\Services\MenuBuilderService::class);
 
             return [
-                'themeSettings' => $theme->settings(),
-                'footerSettings' => app(\App\Services\FooterBuilderService::class)->get(),
+                'themeSettings' => $themeSettings,
+                'footerSettings' => $footer,
                 'activeTheme' => $theme->activeSlug(),
-                'headerMenu' => filter_storefront_menu(app(\App\Services\MenuBuilderService::class)->getTree(\App\Enums\MenuLocation::Header)),
-                'footerMenu' => filter_storefront_menu(app(\App\Services\MenuBuilderService::class)->getTree(\App\Enums\MenuLocation::Footer)),
-                'storeSettings' => ['name' => setting('name', config('app.name'))],
+                'headerMenu' => filter_storefront_menu($menus->getTree(\App\Enums\MenuLocation::Header)),
+                'footerMenu' => filter_storefront_menu($menus->getTree(\App\Enums\MenuLocation::Footer)),
+                'storeSettings' => [
+                    'name' => setting('name', config('app.name')),
+                    'logo' => $themeSettings->logo ?? setting('logo'),
+                    'favicon' => $themeSettings->favicon ?? setting('favicon'),
+                    'phone' => $footer->phone ?? setting('phone'),
+                    'email' => $footer->email ?? setting('email'),
+                    'address' => $footer->address ?? setting('address'),
+                    'facebook' => $footer->facebook_url ?? setting('facebook_url'),
+                    'instagram' => $footer->instagram_url ?? setting('instagram_url'),
+                    'whatsapp' => $footer->whatsapp_number ?? setting('whatsapp_number'),
+                    'messenger' => $footer->messenger_link ?? setting('messenger_link'),
+                ],
             ];
         });
         $this->line('  storefront.layout');

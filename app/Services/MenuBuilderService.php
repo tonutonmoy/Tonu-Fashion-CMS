@@ -6,6 +6,7 @@ use App\Enums\MenuLocation;
 use App\Models\Menu;
 use App\Repositories\Contracts\MenuRepositoryInterface;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 
 class MenuBuilderService
 {
@@ -13,12 +14,14 @@ class MenuBuilderService
 
     public function getTree(MenuLocation $location): Collection
     {
-        $menu = Menu::query()
-            ->where('location', $location->value)
-            ->with(['items' => fn ($q) => $q->with(['children.page', 'page'])])
-            ->first();
+        return Cache::rememberForever("storefront.menu.{$location->value}", function () use ($location) {
+            $menu = Menu::query()
+                ->where('location', $location->value)
+                ->with(['items' => fn ($q) => $q->with(['children.page', 'page'])])
+                ->first();
 
-        return $menu?->items ?? collect();
+            return $menu?->items ?? collect();
+        });
     }
 
     public function getAllMenus(): Collection
@@ -35,6 +38,8 @@ class MenuBuilderService
 
         $menu->update(['name' => $name]);
         $this->menus->syncItems($menu, $items);
+        Cache::forget("storefront.menu.{$location->value}");
+        Cache::forget('storefront.layout');
 
         return $menu->fresh('allItems');
     }
