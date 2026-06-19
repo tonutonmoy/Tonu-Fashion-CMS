@@ -32,7 +32,10 @@ def run_remote(script_path: Path, extra_env: str = "") -> int:
         line = stdout.readline()
         if not line:
             break
-        print(line, end="")
+        try:
+            print(line, end="")
+        except UnicodeEncodeError:
+            print(line.encode("ascii", errors="replace").decode("ascii"), end="")
     code = stdout.channel.recv_exit_status()
     err = stderr.read().decode(errors="replace")
     if err.strip():
