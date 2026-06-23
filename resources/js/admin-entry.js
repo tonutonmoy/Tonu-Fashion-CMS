@@ -1,4 +1,5 @@
 import './bootstrap';
+import './admin-filters';
 import './admin';
 import './mobile';
 import './cms-builder';

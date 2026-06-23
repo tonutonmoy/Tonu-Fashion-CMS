@@ -60,19 +60,28 @@ class FlashSaleService
 
     public function isActive(): bool
     {
-        if (! $this->isSectionEnabled()) {
-            return false;
-        }
+        return $this->isSectionEnabled() && $this->isWithinSchedule();
+    }
 
+    public function isWithinSchedule(): bool
+    {
         $settings = $this->getSettings();
         $start = $this->parseBoundary($settings['start_at'] ?? $settings['start_date'] ?? null, startOfDay: true);
         $end = $this->parseBoundary($settings['end_at'] ?? $settings['end_date'] ?? null, startOfDay: false);
 
-        if (! $start || ! $end) {
-            return false;
+        if (! $start && ! $end) {
+            return true;
         }
 
-        return now()->between($start, $end);
+        if ($start && $end) {
+            return now()->between($start, $end);
+        }
+
+        if ($start) {
+            return now()->gte($start);
+        }
+
+        return now()->lte($end);
     }
 
     public function discountPercent(): int
@@ -161,25 +170,25 @@ class FlashSaleService
 
     public function getProducts(int $limit = 8): Collection
     {
-        if (! $this->isActive()) {
+        if (! $this->isSectionEnabled()) {
             return collect();
         }
 
         $settings = $this->getSettings();
         $query = Product::query()
             ->with(['images', 'category'])
-            ->where('status', RecordStatus::Active)
-            ->where('stock', '>', 0)
-            ->where('is_flash_sale', true);
+            ->where('status', RecordStatus::Active);
 
         if (! empty($settings['product_ids'])) {
             $ids = array_values(array_filter(array_map('intval', $settings['product_ids'])));
             if ($ids !== []) {
                 $query->whereIn('id', $ids)
                     ->orderByRaw('FIELD(id, '.implode(',', $ids).')');
+            } else {
+                $query->where('is_flash_sale', true)->orderByDesc('id');
             }
         } else {
-            $query->latest();
+            $query->where('is_flash_sale', true)->orderByDesc('id');
         }
 
         return $query->limit($limit)->get();

@@ -38,15 +38,16 @@
     </form>
 </div>
 
-<form method="GET" class="mb-4 flex flex-wrap gap-2">
-    <input name="q" value="{{ request('q') }}" class="input max-w-xs" placeholder="Search files...">
+<form method="GET" class="mb-4 flex flex-wrap gap-2 items-center" data-admin-auto-filter>
+    <input name="q" value="{{ request('q') }}" class="input max-w-xs" placeholder="Search files..."
+           data-search-suggest="{{ route('admin.search.suggest', ['type' => 'media']) }}">
     <select name="folder" class="input max-w-[10rem]">
         <option value="">All folders</option>
         @foreach($folders as $folder)
         <option value="{{ $folder }}" @selected(request('folder') === $folder)>{{ $folder }}</option>
         @endforeach
     </select>
-    <button class="btn-secondary">Filter</button>
+    <a href="{{ route('admin.cms.media.index') }}" class="btn-secondary">Reset</a>
 </form>
 
 <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">

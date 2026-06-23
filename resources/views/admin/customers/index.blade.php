@@ -1,14 +1,15 @@
 @extends('layouts.admin')
 @section('title', 'Customers')
 @section('content')
-<form method="GET" class="card p-4 mb-4 flex flex-col sm:flex-row gap-3">
-    <input type="text" name="search" value="{{ request('search') }}" placeholder="Search name, email, phone..." class="input flex-1">
+<form method="GET" class="card p-4 mb-4 flex flex-col sm:flex-row gap-3" data-admin-auto-filter>
+    <input type="text" name="search" value="{{ request('search') }}" placeholder="Search name, email, phone..." class="input flex-1"
+           data-search-suggest="{{ route('admin.search.suggest', ['type' => 'customers']) }}">
     <select name="status" class="input sm:w-40">
         <option value="">All accounts</option>
         <option value="active" @selected(request('status') === 'active')>Active</option>
         <option value="inactive" @selected(request('status') === 'inactive')>Blocked</option>
     </select>
-    <button class="btn-primary">Search</button>
+    <a href="{{ route('admin.customers.index') }}" class="btn-secondary">Reset</a>
 </form>
 
 <div class="card overflow-hidden">

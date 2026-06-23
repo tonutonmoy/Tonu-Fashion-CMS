@@ -180,11 +180,12 @@ class HomepageBuilderService
                 'settings' => $settings,
             ],
             HomepageSectionKey::FlashSale->value => [
-                'products' => $this->flashSale->isActive()
+                'products' => $this->flashSale->isSectionEnabled()
                     ? $this->cachedProductList('flash_sale', fn () => $this->flashSale->getProducts((int) ($settings['limit'] ?? 8)))
                     : collect(),
                 'settings' => $settings,
-                'active' => $this->flashSale->isActive(),
+                'active' => $this->flashSale->isSectionEnabled(),
+                'live' => $this->flashSale->isActive(),
                 'ends_at' => $this->flashSale->endsAtIso(),
             ],
             HomepageSectionKey::BestSellers->value => [

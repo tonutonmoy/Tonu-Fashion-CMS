@@ -8,8 +8,9 @@
     <a href="{{ route('admin.products.create') }}" class="btn-primary">Add Product</a>
 </div>
 
-<form method="GET" class="card p-4 mb-4 flex flex-col sm:flex-row gap-3 flex-wrap">
-    <input type="text" name="search" value="{{ request('search') }}" class="input flex-1 min-w-[12rem]" placeholder="Search name or SKU…">
+<form method="GET" class="card p-4 mb-4 flex flex-col sm:flex-row gap-3 flex-wrap" data-admin-auto-filter>
+    <input type="text" name="search" value="{{ request('search') }}" class="input flex-1 min-w-[12rem]" placeholder="Search name or SKU…"
+           data-search-suggest="{{ route('admin.search.suggest', ['type' => 'products']) }}">
     <select name="category_id" class="input sm:w-44">
         <option value="">All categories</option>
         @foreach($categories as $category)
@@ -22,8 +23,8 @@
         <option value="{{ $status->value }}" @selected(request('status') === $status->value)>{{ $status->label() }}</option>
         @endforeach
     </select>
-    <button type="submit" class="btn-primary">Filter</button>
     <a href="{{ route('admin.products.index') }}" class="btn-secondary">Reset</a>
+    <span class="text-xs text-gray-400 self-center">Filters apply automatically</span>
 </form>
 
 <div class="card overflow-hidden">

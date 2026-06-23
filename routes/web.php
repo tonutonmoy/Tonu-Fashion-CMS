@@ -103,6 +103,8 @@ Route::prefix('api/cart')->name('api.cart.')->group(function () {
     Route::delete('/{id}', [CartApiController::class, 'destroy'])->name('destroy');
 });
 
+Route::get('/api/search/suggest', \App\Http\Controllers\Api\SearchSuggestController::class)->name('api.search.suggest');
+
 Route::post('/api/license/validate', [LicenseValidationController::class, 'validate'])->name('api.license.validate');
 
 Route::prefix('api/support')->name('api.support.')->group(function () {
@@ -140,6 +142,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
     Route::middleware(['auth', 'admin'])->group(function () {
         Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+        Route::get('/search/suggest', [\App\Http\Controllers\Admin\AdminSearchController::class, 'suggest'])->name('search.suggest');
         Route::post('/preferences', [StorePreferencesController::class, 'update'])->name('preferences.update');
 
         Route::middleware('role:SUPER_ADMIN')->group(function () {

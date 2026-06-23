@@ -13,15 +13,16 @@
     <div class="card p-4"><p class="text-sm text-gray-500">Suspended</p><p class="text-2xl font-bold text-red-600">{{ $stats['suspended'] }}</p></div>
 </div>
 
-<form method="GET" class="card p-4 mb-6 flex flex-col sm:flex-row gap-3">
-    <input type="text" name="search" value="{{ $filters['search'] ?? '' }}" placeholder="Search key, domain, customer..." class="input flex-1">
+<form method="GET" class="card p-4 mb-6 flex flex-col sm:flex-row gap-3" data-admin-auto-filter>
+    <input type="text" name="search" value="{{ $filters['search'] ?? '' }}" placeholder="Search key, domain, customer..." class="input flex-1"
+           data-search-suggest="{{ route('admin.search.suggest', ['type' => 'licenses']) }}">
     <select name="status" class="input sm:w-48">
         <option value="">All statuses</option>
         @foreach(\App\Enums\LicenseStatus::cases() as $status)
             <option value="{{ $status->value }}" @selected(($filters['status'] ?? '') === $status->value)>{{ $status->label() }}</option>
         @endforeach
     </select>
-    <button class="btn-primary">Search</button>
+    <a href="{{ route('admin.license.index') }}" class="btn-secondary">Reset</a>
 </form>
 
 <div class="card overflow-hidden">

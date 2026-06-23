@@ -1441,3 +1441,48 @@
 .support-msg-image {
     @apply block;
 }
+
+/* Search autocomplete (storefront + admin) */
+.search-suggest-wrap {
+    @apply relative w-full;
+}
+
+.search-suggest-dropdown {
+    @apply absolute left-0 right-0 top-full z-50 mt-1 max-h-72 overflow-y-auto rounded-xl border border-gray-200 bg-white shadow-lg;
+}
+
+.search-suggest-item {
+    @apply flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left text-sm text-gray-900 hover:bg-gray-50;
+}
+
+.search-suggest-item.is-active {
+    @apply bg-brand-50 text-brand-600;
+}
+
+.search-suggest-label {
+    @apply truncate font-medium;
+}
+
+.search-suggest-meta {
+    @apply shrink-0 text-xs text-gray-500;
+}
+
+.admin-body .search-suggest-dropdown {
+    @apply border-gray-200 bg-white;
+}
+
+.theme-body.theme-mode-dark .search-suggest-dropdown {
+    @apply border-gray-700 bg-gray-900;
+}
+
+.theme-body.theme-mode-dark .search-suggest-item {
+    @apply text-gray-100 hover:bg-gray-800;
+}
+
+.theme-body.theme-mode-dark .search-suggest-item.is-active {
+    @apply bg-gray-800 text-white;
+}
+
+.theme-body.theme-mode-dark .search-suggest-meta {
+    @apply text-gray-400;
+}

@@ -1,6 +1,4 @@
-import { onPageLoad } from './page-load';
-
-const debounce = (fn, ms = 280) => {
+const debounce = (fn, ms = 350) => {
     let timer;
     return (...args) => {
         clearTimeout(timer);
@@ -8,12 +6,29 @@ const debounce = (fn, ms = 280) => {
     };
 };
 
-const initSearchSuggestDropdown = (form, input) => {
-    if (input.dataset.suggestBound) {
+const submitFilterForm = (form) => {
+    if (!form || form.dataset.confirm && form.dataset.confirmed !== 'true') {
         return;
     }
-    input.dataset.suggestBound = '1';
+    if (typeof form.requestSubmit === 'function') {
+        form.requestSubmit();
+    } else {
+        form.submit();
+    }
+};
 
+const initSearchSuggest = (input) => {
+    if (!input || input.dataset.suggestBound) {
+        return;
+    }
+
+    const url = input.dataset.searchSuggest;
+    if (!url) {
+        return;
+    }
+
+    input.dataset.suggestBound = '1';
+    const form = input.closest('form');
     const wrap = document.createElement('div');
     wrap.className = 'search-suggest-wrap relative';
     input.parentNode.insertBefore(wrap, input);
@@ -21,6 +36,7 @@ const initSearchSuggestDropdown = (form, input) => {
 
     const dropdown = document.createElement('div');
     dropdown.className = 'search-suggest-dropdown hidden';
+    dropdown.setAttribute('role', 'listbox');
     wrap.appendChild(dropdown);
 
     let items = [];
@@ -33,11 +49,18 @@ const initSearchSuggestDropdown = (form, input) => {
         activeIndex = -1;
     };
 
-    const go = (url) => {
-        if (window.Turbo) {
-            window.Turbo.visit(url);
-        } else {
-            window.location.href = url;
+    const pick = (item) => {
+        if (!item) {
+            return;
+        }
+        if (item.url) {
+            window.location.href = item.url;
+            return;
+        }
+        input.value = item.value ?? item.label ?? '';
+        close();
+        if (form) {
+            submitFilterForm(form);
         }
     };
 
@@ -52,10 +75,11 @@ const initSearchSuggestDropdown = (form, input) => {
             const btn = document.createElement('button');
             btn.type = 'button';
             btn.className = `search-suggest-item${index === activeIndex ? ' is-active' : ''}`;
+            btn.setAttribute('role', 'option');
             btn.innerHTML = `<span class="search-suggest-label">${item.label}</span>${item.meta ? `<span class="search-suggest-meta">${item.meta}</span>` : ''}`;
             btn.addEventListener('mousedown', (e) => {
                 e.preventDefault();
-                go(item.url);
+                pick(item);
             });
             dropdown.appendChild(btn);
         });
@@ -63,12 +87,12 @@ const initSearchSuggestDropdown = (form, input) => {
 
     const fetchSuggestions = debounce(async () => {
         const q = input.value.trim();
-        if (q.length < 2) {
+        if (q.length < 1) {
             close();
             return;
         }
         try {
-            const response = await fetch(`/api/search/suggest?q=${encodeURIComponent(q)}`, {
+            const response = await fetch(`${url}?q=${encodeURIComponent(q)}`, {
                 headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
             });
             if (!response.ok) {
@@ -81,24 +105,13 @@ const initSearchSuggestDropdown = (form, input) => {
         } catch {
             close();
         }
-    });
+    }, 280);
 
     input.addEventListener('input', fetchSuggestions);
     input.addEventListener('focus', fetchSuggestions);
     input.addEventListener('blur', () => setTimeout(close, 150));
     input.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && activeIndex >= 0 && items[activeIndex]) {
-            e.preventDefault();
-            go(items[activeIndex].url);
-            return;
-        }
         if (!items.length) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                const query = input.value.trim();
-                const base = form.getAttribute('action') || '/shop';
-                go(query ? `${base}?q=${encodeURIComponent(query)}` : base);
-            }
             return;
         }
         if (e.key === 'ArrowDown') {
@@ -109,26 +122,50 @@ const initSearchSuggestDropdown = (form, input) => {
             e.preventDefault();
             activeIndex = (activeIndex - 1 + items.length) % items.length;
             render();
+        } else if (e.key === 'Enter' && activeIndex >= 0) {
+            e.preventDefault();
+            pick(items[activeIndex]);
         } else if (e.key === 'Escape') {
             close();
         }
     });
 };
 
-const initHeaderSearch = () => {
-    document.querySelectorAll('[data-header-search]').forEach((form) => {
-        const input = form.querySelector('input[name="q"]');
-        if (!input) {
+export const initAdminAutoFilters = () => {
+    if (!document.body.classList.contains('admin-body')) {
+        return;
+    }
+
+    document.querySelectorAll('form[data-admin-auto-filter]').forEach((form) => {
+        if (form.dataset.autoFilterBound) {
             return;
         }
-        initSearchSuggestDropdown(form, input);
-    });
+        form.dataset.autoFilterBound = '1';
 
-    const shopForm = document.getElementById('shop-filter-form');
-    const shopInput = shopForm?.querySelector('input[name="q"][data-shop-search]');
-    if (shopForm && shopInput) {
-        initSearchSuggestDropdown(shopForm, shopInput);
-    }
+        const debouncedSubmit = debounce(() => submitFilterForm(form), 400);
+
+        form.querySelectorAll('input, select').forEach((el) => {
+            if (el.type === 'hidden' || el.type === 'submit' || el.type === 'button') {
+                return;
+            }
+
+            if (el.dataset.searchSuggest) {
+                initSearchSuggest(el);
+                const suggestSubmit = debounce(() => submitFilterForm(form), 700);
+                el.addEventListener('input', suggestSubmit);
+                el.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' && form) {
+                        e.preventDefault();
+                        submitFilterForm(form);
+                    }
+                });
+            } else if (el.type === 'search' || el.type === 'text' || el.name === 'search' || el.name === 'q') {
+                el.addEventListener('input', debouncedSubmit);
+            } else {
+                el.addEventListener('change', () => submitFilterForm(form));
+            }
+        });
+    });
 };
 
-onPageLoad(initHeaderSearch);
+document.addEventListener('DOMContentLoaded', initAdminAutoFilters);

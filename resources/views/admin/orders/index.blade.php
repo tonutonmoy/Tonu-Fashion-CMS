@@ -19,10 +19,11 @@
     <a href="{{ route('admin.orders.create') }}" class="btn-primary shrink-0">Create Custom Order</a>
 </div>
 
-<form method="GET" class="card p-4 mb-4 space-y-3">
-    <input type="hidden" name="scope" value="{{ $scope }}">
+<form method="GET" class="card p-4 mb-4 space-y-3" data-admin-auto-filter>
+    <input type="hidden" name="scope" value="{{ request('scope', 'today') }}">
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-        <input type="text" name="search" value="{{ request('search') }}" placeholder="Order ID or phone…" class="input lg:col-span-2">
+        <input type="text" name="search" value="{{ request('search') }}" placeholder="Order ID or phone…" class="input lg:col-span-2"
+               data-search-suggest="{{ route('admin.search.suggest', ['type' => 'orders']) }}">
         <select name="status" class="input">
             <option value="">All statuses</option>
             @foreach($statuses as $status)
@@ -33,8 +34,8 @@
         <input type="date" name="date_to" value="{{ request('date_to') }}" class="input" title="To date">
     </div>
     <div class="flex gap-2">
-        <button type="submit" class="btn-primary">Filter</button>
         <a href="{{ route('admin.orders.index', ['scope' => $scope]) }}" class="btn-secondary">Reset</a>
+        <span class="text-xs text-gray-400 self-center">Filters apply automatically</span>
     </div>
 </form>
 

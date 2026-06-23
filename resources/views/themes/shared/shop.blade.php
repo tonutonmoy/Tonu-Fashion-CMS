@@ -13,13 +13,14 @@
                 </button>
             </div>
             <form id="shop-filter-form" method="GET" action="{{ route('shop.index') }}" class="space-y-5">
-                @if(!empty($filters['q']))
-                    <input type="hidden" name="q" value="{{ $filters['q'] }}">
-                @endif
-
                 <div class="hidden md:block">
                     <h3 class="font-semibold mb-3">Filters</h3>
                     <p class="text-xs text-gray-500">Updates automatically</p>
+                </div>
+
+                <div>
+                    <label class="label" for="shop-search-q">Search</label>
+                    <input type="search" id="shop-search-q" name="q" value="{{ $filters['q'] ?? '' }}" placeholder="Search products…" class="input shop-filter-input" autocomplete="off" data-shop-search>
                 </div>
 
                 <div>

@@ -9,15 +9,16 @@
     <a href="{{ route('admin.users.create') }}" class="btn-primary">Add Team Member</a>
 </div>
 
-<form method="GET" class="card p-4 mb-4 flex flex-col sm:flex-row gap-3">
-    <input type="text" name="search" value="{{ request('search') }}" placeholder="Search name or email..." class="input flex-1">
+<form method="GET" class="card p-4 mb-4 flex flex-col sm:flex-row gap-3" data-admin-auto-filter>
+    <input type="text" name="search" value="{{ request('search') }}" placeholder="Search name or email..." class="input flex-1"
+           data-search-suggest="{{ route('admin.search.suggest', ['type' => 'users']) }}">
     <select name="role" class="input sm:w-40">
         <option value="">All roles</option>
         @foreach(\App\Enums\UserRole::assignableTeamRoles() as $role)
         <option value="{{ $role->value }}" @selected(request('role') === $role->value)>{{ $role->label() }}</option>
         @endforeach
     </select>
-    <button class="btn-primary">Search</button>
+    <a href="{{ route('admin.users.index') }}" class="btn-secondary">Reset</a>
 </form>
 
 <div class="card overflow-hidden">

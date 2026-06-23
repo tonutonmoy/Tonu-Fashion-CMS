@@ -6,15 +6,16 @@
     <h2 class="text-xl font-semibold">Pages</h2>
     <a href="{{ route('admin.cms.pages.create') }}" class="btn-primary">Create Page</a>
 </div>
-<form class="mb-4 flex gap-2" method="GET">
-    <input name="search" value="{{ request('search') }}" class="input max-w-xs" placeholder="Search pages...">
+<form class="mb-4 flex flex-wrap gap-2 items-center" method="GET" data-admin-auto-filter>
+    <input name="search" value="{{ request('search') }}" class="input max-w-xs" placeholder="Search pages..."
+           data-search-suggest="{{ route('admin.search.suggest', ['type' => 'pages']) }}">
     <select name="status" class="input max-w-[10rem]">
         <option value="">All statuses</option>
         @foreach(\App\Enums\ContentStatus::cases() as $s)
         <option value="{{ $s->value }}" @selected(request('status') === $s->value)>{{ $s->label() }}</option>
         @endforeach
     </select>
-    <button class="btn-secondary">Filter</button>
+    <a href="{{ route('admin.cms.pages.index') }}" class="btn-secondary">Reset</a>
 </form>
 <div class="card overflow-hidden">
     <table class="w-full text-sm">

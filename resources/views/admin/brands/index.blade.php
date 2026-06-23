@@ -6,15 +6,15 @@
     <a href="{{ route('admin.brands.create') }}" class="btn-primary">Add Brand</a>
 </div>
 
-<form method="GET" class="card p-4 mb-4 flex flex-col sm:flex-row gap-3">
-    <input type="text" name="search" value="{{ request('search') }}" class="input flex-1" placeholder="Search name…">
+<form method="GET" class="card p-4 mb-4 flex flex-col sm:flex-row gap-3" data-admin-auto-filter>
+    <input type="text" name="search" value="{{ request('search') }}" class="input flex-1" placeholder="Search name…"
+           data-search-suggest="{{ route('admin.search.suggest', ['type' => 'brands']) }}">
     <select name="status" class="input sm:w-36">
         <option value="">All statuses</option>
         @foreach(\App\Enums\RecordStatus::cases() as $status)
         <option value="{{ $status->value }}" @selected(request('status') === $status->value)>{{ $status->label() }}</option>
         @endforeach
     </select>
-    <button type="submit" class="btn-primary">Filter</button>
     <a href="{{ route('admin.brands.index') }}" class="btn-secondary">Reset</a>
 </form>
 
