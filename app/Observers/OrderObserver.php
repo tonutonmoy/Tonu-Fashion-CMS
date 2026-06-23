@@ -20,14 +20,10 @@ class OrderObserver
             return;
         }
 
-        $previous = OrderStatus::tryFrom((string) $order->getOriginal('status'))
-            ?? OrderStatus::tryFromLegacy((string) $order->getOriginal('status'));
+        $previous = $this->resolveStatus($order->getOriginal('status'));
+        $next = $this->resolveStatus($order->status);
 
-        $next = $order->status instanceof OrderStatus
-            ? $order->status
-            : OrderStatus::from((string) $order->status);
-
-        if ($previous === null || $previous === $next) {
+        if ($previous === null || $next === null || $previous === $next) {
             return;
         }
 
@@ -45,5 +41,19 @@ class OrderObserver
             && ! in_array($previous, [OrderStatus::Cancelled, OrderStatus::Returned], true)) {
             $this->inventory->rollbackForOrder($order);
         }
+    }
+
+    private function resolveStatus(mixed $value): ?OrderStatus
+    {
+        if ($value instanceof OrderStatus) {
+            return $value;
+        }
+
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        return OrderStatus::tryFrom((string) $value)
+            ?? OrderStatus::tryFromLegacy((string) $value);
     }
 }
