@@ -9,6 +9,7 @@ use App\Repositories\Contracts\BrandRepositoryInterface;
 use App\Repositories\Contracts\CategoryRepositoryInterface;
 use App\Repositories\Contracts\ProductRepositoryInterface;
 use App\Services\ProductService;
+use App\Services\FlashSaleService;
 use App\Services\VariantCatalogService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -22,6 +23,7 @@ class ProductController extends Controller
         private BrandRepositoryInterface $brands,
         private ProductService $productService,
         private VariantCatalogService $variantCatalog,
+        private FlashSaleService $flashSale,
     ) {}
 
     public function index(Request $request): View
@@ -39,6 +41,8 @@ class ProductController extends Controller
             'brands' => $this->brands->getActive(),
             'sizes' => $this->variantCatalog->sizes(),
             'colors' => $this->variantCatalog->colors(),
+            'flashSaleActive' => $this->flashSale->isActive(),
+            'flashDiscount' => $this->flashSale->discountPercent(),
         ]);
     }
 
@@ -69,6 +73,8 @@ class ProductController extends Controller
             'brands' => $this->brands->getActive(),
             'sizes' => $this->variantCatalog->sizes($product),
             'colors' => $this->variantCatalog->colors($product),
+            'flashSaleActive' => $this->flashSale->isActive(),
+            'flashDiscount' => $this->flashSale->discountPercent(),
         ]);
     }
 

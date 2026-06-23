@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Intervention\Image\Laravel\Facades\Image;
@@ -35,6 +36,10 @@ class ImageService
 
         $directory = $this->normalizeDirectory($directory);
 
+        if ($this->shouldUseImgbb()) {
+            return $this->uploadToImgbb($file, $sizes, $quality, $preferWebp);
+        }
+
         return $this->uploadLocallyWithVariants($file, $directory, $sizes, $quality, $preferWebp);
     }
 
@@ -57,10 +62,6 @@ class ImageService
             return asset('images/placeholder-product.svg');
         }
 
-        if ($this->isBrokenExternalUrl($path)) {
-            return asset('images/placeholder-product.svg');
-        }
-
         if ($this->isRemoteUrl($path)) {
             return $path;
         }
@@ -76,17 +77,24 @@ class ImageService
         return asset('images/placeholder-product.svg');
     }
 
-    private function isBrokenExternalUrl(string $path): bool
-    {
-        return str_contains($path, 'ibb.co')
-            || str_contains($path, 'imgbb.com')
-            || str_contains($path, 'placeholder-fashion')
-            || str_contains($path, 'picsum.photos');
-    }
-
     public function isRemoteUrl(string $path): bool
     {
         return str_starts_with($path, 'http://') || str_starts_with($path, 'https://');
+    }
+
+    private function shouldUseImgbb(): bool
+    {
+        $driver = (string) config('images.driver', 'auto');
+
+        if ($driver === 'local') {
+            return false;
+        }
+
+        if ($driver === 'imgbb') {
+            return filled(config('images.imgbb.api_key'));
+        }
+
+        return filled(config('images.imgbb.api_key'));
     }
 
     private function normalizeDirectory(string $directory): string
@@ -103,6 +111,87 @@ class ImageService
         }
 
         return $directory;
+    }
+
+    /**
+     * @param  array<string, int>  $sizes
+     * @return array{path: string, variants: array<string, string>}
+     */
+    private function uploadToImgbb(UploadedFile $file, array $sizes, int $quality, bool $preferWebp): array
+    {
+        $mime = $file->getMimeType() ?? '';
+        $isRaster = str_starts_with($mime, 'image/') && ! in_array($mime, ['image/svg+xml', 'image/gif'], true);
+
+        if (! $isRaster) {
+            return $this->uploadRawToImgbb($file);
+        }
+
+        $maxWidth = max($sizes ?: [1200]);
+        $image = Image::read($file)->scaleDown(width: $maxWidth);
+        $ext = ($preferWebp && function_exists('imagewebp')) ? 'webp' : strtolower($file->getClientOriginalExtension() ?: 'jpg');
+        if (! in_array($ext, ['jpg', 'jpeg', 'png', 'webp'], true)) {
+            $ext = 'webp';
+        }
+
+        $encoded = match ($ext) {
+            'webp' => (string) $image->toWebp($quality),
+            'png' => (string) $image->toPng(),
+            default => (string) $image->toJpeg($quality),
+        };
+
+        $url = $this->postToImgbb($encoded, $file->getClientOriginalName());
+
+        return [
+            'path' => $url,
+            'variants' => [
+                'thumb' => $url,
+                'medium' => $url,
+                'large' => $url,
+            ],
+        ];
+    }
+
+    /**
+     * @return array{path: string, variants: array<string, string>}
+     */
+    private function uploadRawToImgbb(UploadedFile $file): array
+    {
+        $url = $this->postToImgbb(file_get_contents($file->getRealPath()), $file->getClientOriginalName());
+
+        return [
+            'path' => $url,
+            'variants' => ['thumb' => $url, 'medium' => $url, 'large' => $url],
+        ];
+    }
+
+    private function postToImgbb(string $binary, string $name): string
+    {
+        $apiKey = config('images.imgbb.api_key');
+        $apiUrl = config('images.imgbb.api_url');
+
+        if (! $apiKey) {
+            throw new \RuntimeException('ImageBB API key is not configured.');
+        }
+
+        $response = Http::timeout(60)
+            ->asForm()
+            ->post($apiUrl, [
+                'key' => $apiKey,
+                'image' => base64_encode($binary),
+                'name' => Str::slug(pathinfo($name, PATHINFO_FILENAME)) ?: Str::uuid()->toString(),
+            ]);
+
+        if (! $response->successful()) {
+            throw new \RuntimeException('ImageBB upload failed: '.$response->body());
+        }
+
+        $url = $response->json('data.display_url') ?? $response->json('data.url');
+
+        if (! $url) {
+            throw new \RuntimeException('ImageBB upload returned no image URL.');
+        }
+
+        return (string) $url;
     }
 
     /**

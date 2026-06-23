@@ -31,7 +31,7 @@ if (! function_exists('admin_per_page')) {
 if (! function_exists('product_price')) {
     function product_price(\App\Models\Product $product): float
     {
-        return (float) ($product->sale_price ?? $product->regular_price);
+        return app(\App\Services\FlashSaleService::class)->resolveUnitPrice($product);
     }
 }
 

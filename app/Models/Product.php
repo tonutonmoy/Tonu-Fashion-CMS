@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Concerns\HasTranslations;
 use App\Enums\RecordStatus;
+use App\Services\FlashSaleService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -15,7 +16,13 @@ class Product extends BaseModel
     protected static function booted(): void
     {
         static::saving(function (self $product) {
-            $product->effective_price = $product->sale_price ?? $product->regular_price;
+            $flash = app(FlashSaleService::class);
+
+            if ($flash->isActive() && $product->is_flash_sale) {
+                $product->effective_price = $flash->discountedPrice((float) $product->regular_price);
+            } else {
+                $product->effective_price = $product->sale_price ?? $product->regular_price;
+            }
         });
     }
 
@@ -29,6 +36,7 @@ class Product extends BaseModel
         'sale_price',
         'stock',
         'featured',
+        'is_flash_sale',
         'free_delivery',
         'effective_price',
         'category_id',
@@ -49,6 +57,7 @@ class Product extends BaseModel
             'sale_price' => 'float',
             'effective_price' => 'float',
             'featured' => 'boolean',
+            'is_flash_sale' => 'boolean',
             'free_delivery' => 'boolean',
             'status' => RecordStatus::class,
             'avg_rating' => 'decimal:2',
@@ -77,6 +86,11 @@ class Product extends BaseModel
         return $this->hasMany(ProductVariant::class);
     }
 
+    public function orderItems(): HasMany
+    {
+        return $this->hasMany(OrderItem::class);
+    }
+
     public function reviews(): HasMany
     {
         return $this->hasMany(Review::class);
@@ -94,6 +108,12 @@ class Product extends BaseModel
 
     public function getEffectivePriceAttribute(): float
     {
+        $flash = app(FlashSaleService::class);
+
+        if ($flash->isProductInActiveSale($this)) {
+            return $flash->discountedPrice((float) $this->regular_price);
+        }
+
         return (float) ($this->sale_price ?? $this->regular_price);
     }
 
@@ -120,6 +140,10 @@ class Product extends BaseModel
 
     public function isOnSale(): bool
     {
+        if (app(FlashSaleService::class)->isProductInActiveSale($this)) {
+            return true;
+        }
+
         return $this->sale_price !== null && $this->sale_price < $this->regular_price;
     }
 

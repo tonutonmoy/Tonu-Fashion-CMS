@@ -31,7 +31,8 @@ class ThemeController extends Controller
         private BuilderPublishService $publish,
         private HeroBuilderService $hero,
         private HomepageSectionRepositoryInterface $sections,
-        private ImageService $images
+        private ImageService $images,
+        private FlashSaleService $flashSale,
     ) {}
 
     public function customizer(): View
@@ -133,6 +134,10 @@ class ThemeController extends Controller
 
             if ($section->section_key === 'flash_sale') {
                 $incoming['show_countdown'] = $request->boolean('settings.show_countdown');
+                $incoming['product_ids'] = array_values(array_map(
+                    'intval',
+                    $request->input('settings.product_ids', [])
+                ));
             }
 
             if (array_key_exists('limit', $incoming)) {
@@ -143,6 +148,10 @@ class ThemeController extends Controller
         }
 
         $this->homepage->updateSection($id, $data);
+
+        if ($section->section_key === 'flash_sale') {
+            $this->flashSale->syncEffectivePrices();
+        }
 
         return back()->with('success', 'Section draft saved. Click Publish to go live.');
     }

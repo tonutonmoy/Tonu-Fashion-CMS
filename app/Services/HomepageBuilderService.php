@@ -23,6 +23,7 @@ class HomepageBuilderService
         private BuilderPublishService $publish,
         private HeroBuilderService $hero,
         private StorefrontCacheService $cache,
+        private FlashSaleService $flashSale,
     ) {}
 
     public function getEnabledSectionKeys(): array
@@ -179,19 +180,15 @@ class HomepageBuilderService
                 'settings' => $settings,
             ],
             HomepageSectionKey::FlashSale->value => [
-                'products' => $this->isFlashSaleActive($settings)
-                    ? $this->cachedProductList('flash_sale', fn () => $this->getFlashSaleProducts($settings))
+                'products' => $this->flashSale->isActive()
+                    ? $this->cachedProductList('flash_sale', fn () => $this->flashSale->getProducts((int) ($settings['limit'] ?? 8)))
                     : collect(),
                 'settings' => $settings,
-                'active' => $this->isFlashSaleActive($settings),
+                'active' => $this->flashSale->isActive(),
+                'ends_at' => $this->flashSale->endsAtIso(),
             ],
             HomepageSectionKey::BestSellers->value => [
-                'products' => $this->cachedProductList('best_sellers', fn () => Product::query()
-                    ->with(['images', 'category'])
-                    ->where('status', RecordStatus::Active)
-                    ->orderByDesc('review_count')
-                    ->limit($settings['limit'] ?? 8)
-                    ->get()),
+                'products' => $this->cachedProductList('best_sellers', fn () => $this->getBestSellers((int) ($settings['limit'] ?? 8))),
                 'settings' => $settings,
             ],
             HomepageSectionKey::CustomerReviews->value => [
@@ -266,32 +263,17 @@ class HomepageBuilderService
         return collect();
     }
 
-    private function getFlashSaleProducts(array $settings): Collection
+    private function getBestSellers(int $limit): Collection
     {
-        if (! $this->isFlashSaleActive($settings)) {
-            return collect();
-        }
-
         return Product::query()
             ->with(['images', 'category'])
             ->where('status', RecordStatus::Active)
-            ->whereNotNull('sale_price')
-            ->latest()
-            ->limit($settings['limit'] ?? 8)
+            ->where('stock', '>', 0)
+            ->withSum('orderItems as units_sold', 'quantity')
+            ->orderByDesc('units_sold')
+            ->orderByDesc('id')
+            ->limit($limit)
             ->get();
-    }
-
-    private function isFlashSaleActive(array $settings): bool
-    {
-        if (empty($settings['start_date']) || empty($settings['end_date'])) {
-            return false;
-        }
-
-        $now = now();
-        $start = \Carbon\Carbon::parse($settings['start_date']);
-        $end = \Carbon\Carbon::parse($settings['end_date']);
-
-        return $now->between($start, $end);
     }
 
     private function defaultSettingsFor(HomepageSectionKey $key): array
@@ -301,11 +283,12 @@ class HomepageBuilderService
             HomepageSectionKey::FeaturedProducts => ['limit' => 8, 'product_ids' => []],
             HomepageSectionKey::NewArrivals => ['limit' => 8],
             HomepageSectionKey::FlashSale => [
-                'start_date' => now()->toDateString(),
-                'end_date' => now()->addDays(7)->toDateString(),
+                'start_at' => now()->startOfDay()->toIso8601String(),
+                'end_at' => now()->addDays(7)->endOfDay()->toIso8601String(),
                 'discount' => 20,
                 'show_countdown' => true,
                 'limit' => 8,
+                'product_ids' => [],
             ],
             HomepageSectionKey::BestSellers => ['limit' => 8],
             HomepageSectionKey::CustomerReviews => ['limit' => 6],

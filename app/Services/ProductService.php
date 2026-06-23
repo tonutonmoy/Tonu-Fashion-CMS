@@ -15,11 +15,13 @@ class ProductService
         private ProductRepositoryInterface $products,
         private ImageService $images,
         private StorefrontCacheService $cache,
+        private FlashSaleService $flashSale,
     ) {}
 
     public function create(array $data, array $images = [], array $variants = [], array $variantFiles = []): Product
     {
         return DB::transaction(function () use ($data, $images, $variants, $variantFiles) {
+            $data = $this->flashSale->applyProductPricing($data);
             $data['slug'] = $this->resolveSlug($data['slug'] ?? null, $data['name']);
             $data['sku'] = $this->resolveSku($data['sku'] ?? null, $data['name'], $data['slug']);
             unset($data['primary_image_id']);
@@ -46,6 +48,15 @@ class ProductService
             $product = $this->products->find($id);
             $primaryImageId = $data['primary_image_id'] ?? null;
             unset($data['primary_image_id']);
+
+            $data = $this->flashSale->applyProductPricing(array_merge(
+                [
+                    'regular_price' => $product->regular_price,
+                    'sale_price' => $product->sale_price,
+                    'is_flash_sale' => $product->is_flash_sale,
+                ],
+                $data,
+            ));
 
             if (! empty($data['slug'])) {
                 $data['slug'] = $this->resolveSlug($data['slug'], $data['name'] ?? $product->name, $product->id);

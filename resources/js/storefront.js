@@ -42,6 +42,9 @@ function bootStorefront() {
     if (document.querySelector('[data-hero-slider]')) {
         import('./hero-slider');
     }
+    if (document.querySelector('[data-flash-countdown]')) {
+        import('./flash-sale');
+    }
 
     whenIdle(() => {
         import('./marketing-load').then(({ loadMarketingPixels }) => loadMarketingPixels());
@@ -64,8 +67,11 @@ document.addEventListener('turbo:before-cache', () => {
     document.getElementById('shop-filter-overlay')?.classList.add('hidden');
     document.getElementById('cart-sidebar')?.classList.add('translate-x-full');
     document.getElementById('cart-sidebar-overlay')?.classList.add('hidden');
-    document.querySelectorAll('[data-product-gallery]').forEach((gallery) => {
-        delete gallery.dataset.swipeBound;
+    document.querySelectorAll('[data-hero-slider]').forEach((el) => {
+        delete el.dataset.heroReady;
+    });
+    document.querySelectorAll('[data-flash-countdown]').forEach((el) => {
+        delete el.dataset.flashReady;
     });
     document.getElementById('support-chat-widget')?.removeAttribute('data-chat-ready');
 });

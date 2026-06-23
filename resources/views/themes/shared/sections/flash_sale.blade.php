@@ -5,9 +5,9 @@
         <div class="theme-section-header">
             <h2 class="theme-section-title">⚡ Flash Sale — {{ $flash['settings']['discount'] ?? 0 }}% Off</h2>
             @if($flash['settings']['show_countdown'] ?? false)
-            <div class="theme-countdown" data-end="{{ $flash['settings']['end_date'] }}">
+            <div class="theme-countdown" data-flash-countdown data-end="{{ $flash['ends_at'] ?? $flash['settings']['end_at'] ?? $flash['settings']['end_date'] }}">
                 <span class="theme-countdown-label">Ends in:</span>
-                <span id="flash-countdown" class="theme-countdown-timer"></span>
+                <span class="theme-countdown-timer" data-flash-countdown-display>--</span>
             </div>
             @endif
         </div>

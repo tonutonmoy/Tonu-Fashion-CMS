@@ -48,6 +48,12 @@
                         Featured only
                     </label>
                 </div>
+                <div>
+                    <label class="label flex items-center gap-2">
+                        <input type="checkbox" name="flash_sale" value="1" class="shop-filter-input rounded" @checked(!empty($filters['flash_sale']))>
+                        ⚡ Flash sale
+                    </label>
+                </div>
 
                 <div>
                     <label class="label">Price range ({{ config('fashion.currency_symbol', '৳') }})</label>

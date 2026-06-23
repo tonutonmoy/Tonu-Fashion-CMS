@@ -56,6 +56,13 @@
                 <input type="checkbox" name="featured" value="1" @checked(old('featured', $product?->featured)) class="rounded">
                 <span class="text-sm">Featured Product</span>
             </label>
+            @if($flashSaleActive ?? false)
+            <label class="flex items-center gap-2">
+                <input type="hidden" name="flash_sale" value="0">
+                <input type="checkbox" name="flash_sale" value="1" @checked(old('flash_sale', $product?->is_flash_sale)) class="rounded">
+                <span class="text-sm">⚡ Flash Sale ({{ $flashDiscount ?? 20 }}% off)</span>
+            </label>
+            @endif
             <label class="flex items-center gap-2">
                 <input type="checkbox" name="free_delivery" value="1" @checked(old('free_delivery', $product?->free_delivery)) class="rounded">
                 <span class="text-sm">Free Delivery</span>

@@ -65,6 +65,16 @@ class ProductRepository extends BaseRepository implements ProductRepositoryInter
             $query->where('featured', true);
         }
 
+        if (! empty($filters['flash_sale'])) {
+            $query->where('is_flash_sale', true);
+        }
+
+        if (($filters['sort'] ?? '') === 'best_sellers') {
+            $query->withSum('orderItems as units_sold', 'quantity')
+                ->orderByDesc('units_sold')
+                ->orderByDesc('id');
+        }
+
         if (! empty($filters['q'])) {
             $term = $filters['q'];
             $query->where(function ($q) use ($term) {
@@ -83,12 +93,14 @@ class ProductRepository extends BaseRepository implements ProductRepositoryInter
         }
 
         $sort = $filters['sort'] ?? 'latest';
-        match ($sort) {
-            'price_asc' => $query->orderBy('effective_price'),
-            'price_desc' => $query->orderByDesc('effective_price'),
-            'name' => $query->orderBy('name'),
-            default => $query->latest(),
-        };
+        if ($sort !== 'best_sellers') {
+            match ($sort) {
+                'price_asc' => $query->orderBy('effective_price'),
+                'price_desc' => $query->orderByDesc('effective_price'),
+                'name' => $query->orderBy('name'),
+                default => $query->latest(),
+            };
+        }
 
         return $query->paginate($perPage)->withQueryString();
     }

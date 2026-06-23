@@ -43,6 +43,7 @@ class ProductRequest extends FormRequest
             'sale_price' => ['nullable', 'numeric', 'min:0', 'lt:regular_price'],
             'stock' => ['required', 'integer', 'min:0'],
             'featured' => ['boolean'],
+            'flash_sale' => ['boolean'],
             'free_delivery' => ['boolean'],
             'category_id' => ['required', new ModelExists(Category::class)],
             'brand_id' => ['nullable', new ModelExists(Brand::class)],
@@ -73,6 +74,7 @@ class ProductRequest extends FormRequest
     {
         $this->merge([
             'featured' => $this->boolean('featured'),
+            'flash_sale' => $this->boolean('flash_sale'),
             'free_delivery' => $this->boolean('free_delivery'),
         ]);
     }
