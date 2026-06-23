@@ -122,19 +122,20 @@ class SmsService
 
     public function sendOrderConfirmed(Order $order): ?SmsSendResult
     {
-        if (! $this->settings()['notify_confirmed']) {
+        if (! $this->settings()['notify_confirmed'] || ! $this->isConfigured()) {
             return null;
         }
 
         return $this->send(
             $order->customer_phone,
-            "Order {$order->order_number} confirmed! Total: ".format_bdt($order->total).'. Thank you for shopping with us.'
+            "Order {$order->order_number} confirmed! Total: ".format_bdt($order->total).'. Thank you for shopping with us.',
+            force: true,
         );
     }
 
     public function sendOrderShipped(Order $order): ?SmsSendResult
     {
-        if (! $this->settings()['notify_shipped']) {
+        if (! $this->settings()['notify_shipped'] || ! $this->isConfigured()) {
             return null;
         }
 
@@ -144,12 +145,12 @@ class SmsService
             $message .= " Tracking: {$tracking}.";
         }
 
-        return $this->send($order->customer_phone, $message);
+        return $this->send($order->customer_phone, $message, force: true);
     }
 
     public function sendParcelCreated(Order $order): ?SmsSendResult
     {
-        if (! $this->settings()['notify_parcel_created']) {
+        if (! $this->settings()['notify_parcel_created'] || ! $this->isConfigured()) {
             return null;
         }
 
@@ -158,31 +159,34 @@ class SmsService
 
         return $this->send(
             $order->customer_phone,
-            "Parcel created for order {$order->order_number}. Courier: ".ucfirst($parcel?->courier_name ?? 'courier').". Tracking: {$tracking}."
+            "Parcel created for order {$order->order_number}. Courier: ".ucfirst($parcel?->courier_name ?? 'courier').". Tracking: {$tracking}.",
+            force: true,
         );
     }
 
     public function sendOrderReturned(Order $order): ?SmsSendResult
     {
-        if (! $this->settings()['notify_returned']) {
+        if (! $this->settings()['notify_returned'] || ! $this->isConfigured()) {
             return null;
         }
 
         return $this->send(
             $order->customer_phone,
-            "Order {$order->order_number} was returned to sender. Contact us if you need help."
+            "Order {$order->order_number} was returned to sender. Contact us if you need help.",
+            force: true,
         );
     }
 
     public function sendOrderDelivered(Order $order): ?SmsSendResult
     {
-        if (! $this->settings()['notify_delivered']) {
+        if (! $this->settings()['notify_delivered'] || ! $this->isConfigured()) {
             return null;
         }
 
         return $this->send(
             $order->customer_phone,
-            "Order {$order->order_number} delivered. Thank you! Please rate your purchase."
+            "Order {$order->order_number} delivered. Thank you! Please rate your purchase.",
+            force: true,
         );
     }
 

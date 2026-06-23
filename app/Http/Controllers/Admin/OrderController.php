@@ -92,6 +92,8 @@ class OrderController extends Controller
         $request->validate(['status' => 'required|in:'.implode(',', array_column(OrderStatus::cases(), 'value'))]);
 
         $order = $this->orders->find($id);
+        abort_unless($order, 404);
+
         $status = OrderStatus::from($request->status);
 
         if ($order->status === $status) {
@@ -102,6 +104,10 @@ class OrderController extends Controller
             $this->orderService->updateStatus($id, $status);
         } catch (\InvalidArgumentException $e) {
             return back()->with('error', $e->getMessage());
+        } catch (\Throwable $e) {
+            report($e);
+
+            return back()->with('error', 'Could not update order status. Please try again.');
         }
 
         return back()->with('success', 'Order status updated.');

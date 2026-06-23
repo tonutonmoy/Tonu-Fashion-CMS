@@ -56,15 +56,15 @@ class OrderService
         }
 
         match ($status) {
-            OrderStatus::CallingStage => SendOrderSmsJob::dispatch($orderId, 'confirmed'),
-            OrderStatus::Courier => SendOrderSmsJob::dispatch($orderId, 'parcel_created'),
-            OrderStatus::Delivered => SendOrderSmsJob::dispatch($orderId, 'delivered'),
-            OrderStatus::Returned => SendOrderSmsJob::dispatch($orderId, 'returned'),
+            OrderStatus::CallingStage => SendOrderSmsJob::dispatch($orderId, 'confirmed')->afterResponse(),
+            OrderStatus::Courier => SendOrderSmsJob::dispatch($orderId, 'parcel_created')->afterResponse(),
+            OrderStatus::Delivered => SendOrderSmsJob::dispatch($orderId, 'delivered')->afterResponse(),
+            OrderStatus::Returned => SendOrderSmsJob::dispatch($orderId, 'returned')->afterResponse(),
             default => null,
         };
 
         if ($status === OrderStatus::CallingStage && $this->courierSettings->isAutoParcelEnabled()) {
-            CreateCourierParcelJob::dispatch($orderId);
+            CreateCourierParcelJob::dispatch($orderId)->afterResponse();
         }
     }
 }

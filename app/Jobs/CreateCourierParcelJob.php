@@ -8,6 +8,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
 
 class CreateCourierParcelJob implements ShouldQueue
 {
@@ -27,6 +28,13 @@ class CreateCourierParcelJob implements ShouldQueue
             return;
         }
 
-        $parcels->createParcel($order);
+        try {
+            $parcels->createParcel($order);
+        } catch (\Throwable $e) {
+            Log::warning('Auto courier parcel failed (order status was saved)', [
+                'order_id' => $this->orderId,
+                'message' => $e->getMessage(),
+            ]);
+        }
     }
 }

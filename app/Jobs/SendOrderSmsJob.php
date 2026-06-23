@@ -7,6 +7,7 @@ use App\Services\SmsService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Support\Facades\Log;
 
 class SendOrderSmsJob implements ShouldQueue
 {
@@ -38,7 +39,11 @@ class SendOrderSmsJob implements ShouldQueue
         };
 
         if ($result && ! $result->success) {
-            throw new \RuntimeException($result->message);
+            Log::warning('Order SMS failed (status update was saved)', [
+                'order_id' => $this->orderId,
+                'type' => $this->type,
+                'message' => $result->message,
+            ]);
         }
     }
 }
