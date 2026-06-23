@@ -13,6 +13,7 @@ use App\Models\Product;
 use App\Repositories\Contracts\HomepageSectionRepositoryInterface;
 use App\Services\BuilderPublishService;
 use App\Services\FooterBuilderService;
+use App\Services\FlashSaleService;
 use App\Services\HeroBuilderService;
 use App\Services\HomepageBuilderService;
 use App\Services\ImageService;
