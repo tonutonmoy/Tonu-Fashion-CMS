@@ -3,6 +3,8 @@
 namespace App\Providers;
 
 use App\Enums\MenuLocation;
+use App\Models\Order;
+use App\Observers\OrderObserver;
 use App\Services\BuilderPublishService;
 use App\Services\CartService;
 use App\Services\FooterBuilderService;
@@ -26,6 +28,8 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        Order::observe(OrderObserver::class);
+
         if ($this->app->environment('production') && str_starts_with((string) config('app.url'), 'https://')) {
             \Illuminate\Support\Facades\URL::forceScheme('https');
         }

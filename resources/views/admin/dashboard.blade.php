@@ -132,6 +132,38 @@
   </div>
 </div>
 
+@if(auth()->user()?->canAdmin('store'))
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+  <div class="card p-6">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="font-semibold">Warehouse Value</h3>
+      <a href="{{ route('admin.inventory.index') }}" class="text-sm text-brand-600">Inventory →</a>
+    </div>
+    <p class="text-3xl font-bold text-brand-600">{{ format_bdt($inventory['total_stock_value']) }}</p>
+    <p class="text-sm text-gray-500 mt-1">Available stock × purchase price</p>
+  </div>
+  <div class="card">
+    <div class="p-4 border-b border-gray-200 font-semibold flex items-center justify-between">
+      <span>Low Stock Alert (&lt; 10)</span>
+      <span class="text-sm font-normal text-orange-600">{{ $inventory['low_stock_count'] }} items</span>
+    </div>
+    <div class="divide-y divide-gray-100 text-sm max-h-64 overflow-y-auto">
+      @forelse($inventory['low_stock_products'] as $item)
+      <div class="px-4 py-3 flex justify-between gap-3">
+        <div>
+          <p class="font-medium">{{ $item['product_name'] }}</p>
+          <p class="text-xs text-gray-500">{{ $item['variant_label'] }}</p>
+        </div>
+        <span class="font-semibold text-orange-600 shrink-0">{{ $item['available_stock'] }} left</span>
+      </div>
+      @empty
+      <p class="px-4 py-6 text-gray-500">All items are above low-stock threshold.</p>
+      @endforelse
+    </div>
+  </div>
+</div>
+@endif
+
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
   <div class="card">
     <div class="p-4 border-b border-gray-200 font-semibold flex items-center gap-2">

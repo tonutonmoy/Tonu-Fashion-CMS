@@ -10,6 +10,7 @@ use App\Enums\OrderStatus;
 use App\Enums\UserRole;
 use App\Services\ActivityLogService;
 use App\Services\CourierDashboardService;
+use App\Services\InventoryService;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\View\View;
 
@@ -18,6 +19,7 @@ class DashboardController extends Controller
     public function __construct(
         private CourierDashboardService $courierStats,
         private ActivityLogService $activity,
+        private InventoryService $inventory,
     ) {}
 
     public function index(): View
@@ -39,8 +41,11 @@ class DashboardController extends Controller
             ];
         });
 
+        $inventory = Cache::remember('admin.dashboard.inventory', 120, fn () => $this->inventory->summary());
+
         return view('admin.dashboard', [
             'stats' => $stats,
+            'inventory' => $inventory,
             'courier' => Cache::remember('admin.dashboard.courier', 120, fn () => $this->courierStats->stats()),
             'activityLogs' => $this->activity->recent(8),
             'recentOrders' => Cache::remember('admin.dashboard.recent_orders', 60, fn () => Order::query()

@@ -22,6 +22,7 @@ class AdminOrderService
         private OrderRepositoryInterface $orders,
         private CouponRepositoryInterface $coupons,
         private ShippingService $shipping,
+        private InventoryService $inventory,
     ) {}
 
     public function createManualOrder(array $data): Order
@@ -116,8 +117,10 @@ class AdminOrderService
                     'unit_price' => $line['unit_price'],
                     'total_price' => $line['total_price'],
                 ]);
+            }
 
-                $this->decrementStock($line['product']->id, $line['variant']?->id, $line['quantity']);
+            if ($status === OrderStatus::Pending) {
+                $this->inventory->reserveOrder($order->load('items'));
             }
 
             if ($coupon) {
@@ -135,14 +138,5 @@ class AdminOrderService
         } while (Order::query()->where('order_number', $number)->exists());
 
         return $number;
-    }
-
-    private function decrementStock(int $productId, ?int $variantId, int $quantity): void
-    {
-        if ($variantId) {
-            ProductVariant::query()->whereKey($variantId)->decrement('stock', $quantity);
-        } else {
-            Product::query()->whereKey($productId)->decrement('stock', $quantity);
-        }
     }
 }

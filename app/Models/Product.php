@@ -34,7 +34,9 @@ class Product extends BaseModel
         'description',
         'regular_price',
         'sale_price',
+        'purchase_price',
         'stock',
+        'reserved_stock',
         'featured',
         'is_flash_sale',
         'free_delivery',
@@ -55,6 +57,9 @@ class Product extends BaseModel
         return [
             'regular_price' => 'float',
             'sale_price' => 'float',
+            'purchase_price' => 'float',
+            'stock' => 'integer',
+            'reserved_stock' => 'integer',
             'effective_price' => 'float',
             'featured' => 'boolean',
             'is_flash_sale' => 'boolean',
@@ -150,9 +155,16 @@ class Product extends BaseModel
     public function inStock(): bool
     {
         if ($this->variants->isNotEmpty()) {
-            return $this->variants->where('status', RecordStatus::Active)->sum('stock') > 0;
+            return $this->variants
+                ->where('status', RecordStatus::Active)
+                ->contains(fn (ProductVariant $variant) => $variant->availableStock() > 0);
         }
 
-        return $this->stock > 0;
+        return $this->availableStock() > 0;
+    }
+
+    public function availableStock(): int
+    {
+        return max(0, (int) $this->stock - (int) ($this->reserved_stock ?? 0));
     }
 }

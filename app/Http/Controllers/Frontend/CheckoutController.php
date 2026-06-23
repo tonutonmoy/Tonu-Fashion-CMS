@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Frontend;
 
+use App\Exceptions\InsufficientStockException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CheckoutRequest;
 use App\Services\CartService;
@@ -67,7 +68,7 @@ class CheckoutController extends Controller
 
         try {
             $order = $this->checkout->placeOrder($request->validated());
-        } catch (\RuntimeException $e) {
+        } catch (InsufficientStockException|\RuntimeException $e) {
             return back()->with('error', $e->getMessage())->withInput();
         }
 

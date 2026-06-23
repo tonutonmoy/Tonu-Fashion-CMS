@@ -15,6 +15,7 @@
                 ['route' => 'admin.dashboard', 'match' => 'admin.dashboard', 'icon' => 'dashboard', 'label' => 'Dashboard', 'visible' => true],
                 ['route' => 'admin.users.index', 'match' => 'admin.users.*', 'icon' => 'customers', 'label' => 'Team Members', 'visible' => $user?->role->canManageUsers()],
                 ['route' => 'admin.products.index', 'match' => 'admin.products.*', 'icon' => 'products', 'label' => 'Products', 'visible' => $user?->canAdmin('store')],
+                ['route' => 'admin.inventory.index', 'match' => 'admin.inventory.*', 'icon' => 'products', 'label' => 'Inventory', 'visible' => $user?->canAdmin('store')],
                 ['route' => 'admin.categories.index', 'match' => 'admin.categories.*', 'icon' => 'categories', 'label' => 'Categories', 'visible' => $user?->canAdmin('store')],
                 ['route' => 'admin.brands.index', 'match' => 'admin.brands.*', 'icon' => 'brands', 'label' => 'Brands', 'visible' => $user?->canAdmin('store')],
                 ['route' => 'admin.orders.index', 'match' => 'admin.orders.*', 'icon' => 'orders', 'label' => 'Orders', 'visible' => $user?->canAdmin('store')],

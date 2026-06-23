@@ -6,6 +6,7 @@ use App\Enums\OrderStatus;
 use App\Enums\PaymentMethod;
 use App\Enums\RecordStatus;
 use App\Enums\UserRole;
+use App\Exceptions\InsufficientStockException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreAdminOrderRequest;
 use App\Http\Requests\Admin\UpdateCustomerRestrictionsRequest;
@@ -64,6 +65,8 @@ class OrderController extends Controller
     {
         try {
             $order = $this->adminOrders->createManualOrder($request->validated());
+        } catch (InsufficientStockException $e) {
+            return back()->with('error', $e->getMessage())->withInput();
         } catch (\RuntimeException $e) {
             return back()->with('error', $e->getMessage())->withInput();
         }
@@ -102,12 +105,18 @@ class OrderController extends Controller
 
         try {
             $this->orderService->updateStatus($id, $status);
+        } catch (InsufficientStockException $e) {
+            return back()->with('error', $e->getMessage());
         } catch (\InvalidArgumentException $e) {
             return back()->with('error', $e->getMessage());
         } catch (\Throwable $e) {
             report($e);
 
-            return back()->with('error', 'Could not update order status. Please try again.');
+            $message = str_contains($e->getMessage(), 'stock') || str_contains($e->getMessage(), 'deduct') || str_contains($e->getMessage(), 'reserve')
+                ? $e->getMessage()
+                : 'Could not update order status. Please try again.';
+
+            return back()->with('error', $message);
         }
 
         return back()->with('success', 'Order status updated.');

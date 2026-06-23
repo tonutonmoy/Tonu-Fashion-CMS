@@ -14,6 +14,7 @@ class ProductVariant extends BaseModel
         'image',
         'sku',
         'stock',
+        'reserved_stock',
         'price_adjustment',
         'status',
     ];
@@ -21,6 +22,8 @@ class ProductVariant extends BaseModel
     protected function casts(): array
     {
         return [
+            'stock' => 'integer',
+            'reserved_stock' => 'integer',
             'price_adjustment' => 'float',
             'status' => RecordStatus::class,
         ];
@@ -41,5 +44,10 @@ class ProductVariant extends BaseModel
     public function getPriceAttribute(): float
     {
         return $this->product->effective_price + (float) $this->price_adjustment;
+    }
+
+    public function availableStock(): int
+    {
+        return max(0, (int) $this->stock - (int) ($this->reserved_stock ?? 0));
     }
 }

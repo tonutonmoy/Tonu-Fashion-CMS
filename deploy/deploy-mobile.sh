@@ -53,6 +53,8 @@ elif ! grep -q "^IMAGEBB_API_KEY=." .env 2>/dev/null; then
   echo "WARN: IMAGEBB_API_KEY not set on server .env"
 fi
 
+composer install --no-dev --optimize-autoloader --no-interaction --ignore-platform-reqs
+
 npm run build
 sudo -u www-data php artisan migrate --force --no-interaction
 mkdir -p storage/framework/cache/data storage/framework/sessions storage/framework/views storage/logs

@@ -153,6 +153,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::resource('categories', AdminCategoryController::class)->except(['show']);
             Route::resource('brands', AdminBrandController::class)->except(['show']);
             Route::resource('products', AdminProductController::class)->except(['show']);
+            Route::get('/inventory', [\App\Http\Controllers\Admin\InventoryController::class, 'index'])->name('inventory.index');
+            Route::get('/inventory/log', [\App\Http\Controllers\Admin\InventoryController::class, 'log'])->name('inventory.log');
+            Route::post('/inventory/adjust', [\App\Http\Controllers\Admin\InventoryController::class, 'adjust'])->name('inventory.adjust');
             Route::resource('coupons', AdminCouponController::class)->except(['show']);
 
             Route::get('/orders', [AdminOrderController::class, 'index'])->name('orders.index');

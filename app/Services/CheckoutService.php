@@ -5,10 +5,8 @@ namespace App\Services;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
-use App\Models\Coupon;
 use App\Models\Order;
 use App\Models\OrderItem;
-use App\Models\ProductVariant;
 use App\Repositories\Contracts\CouponRepositoryInterface;
 use App\Repositories\Contracts\OrderRepositoryInterface;
 use Illuminate\Support\Facades\Auth;
@@ -23,7 +21,8 @@ class CheckoutService
         private CouponRepositoryInterface $coupons,
         private ShippingService $shipping,
         private MarketingEventService $marketingEvents,
-        private PaymentSettingsService $paymentSettings
+        private PaymentSettingsService $paymentSettings,
+        private InventoryService $inventory,
     ) {}
 
     public function placeOrder(array $data): Order
@@ -112,9 +111,9 @@ class CheckoutService
                     'unit_price' => $unitPrice,
                     'total_price' => $unitPrice * $item->quantity,
                 ]);
-
-                $this->decrementStock($item->product_id, $item->product_variant_id, $item->quantity);
             }
+
+            $this->inventory->reserveOrder($order->load('items'));
 
             if ($coupon) {
                 $coupon->increment('used_count');
@@ -196,14 +195,5 @@ class CheckoutService
         } while (Order::query()->where('order_number', $number)->exists());
 
         return $number;
-    }
-
-    private function decrementStock(int $productId, ?int $variantId, int $quantity): void
-    {
-        if ($variantId) {
-            ProductVariant::query()->whereKey($variantId)->decrement('stock', $quantity);
-        } else {
-            \App\Models\Product::query()->whereKey($productId)->decrement('stock', $quantity);
-        }
     }
 }
