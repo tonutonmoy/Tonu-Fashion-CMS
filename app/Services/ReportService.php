@@ -31,7 +31,7 @@ class ReportService
                 Carbon::parse($end ?? $now)->endOfDay(),
             ],
             default => [$now->copy()->startOfMonth(), $now->copy()->endOfMonth()],
-        ];
+        };
     }
 
     public function getProfitLoss(Carbon $start, Carbon $end): array
