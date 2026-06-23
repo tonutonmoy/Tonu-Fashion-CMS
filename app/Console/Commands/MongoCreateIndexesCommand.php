@@ -46,6 +46,17 @@ class MongoCreateIndexesCommand extends Command
         $movements->createIndex(['type' => 1, 'created_at' => -1]);
         $movements->createIndex(['admin_id' => 1]);
 
+        $expenses = $db->selectCollection('expenses');
+        $expenses->createIndex(['expense_date' => -1]);
+        $expenses->createIndex(['category' => 1]);
+        $expenses->createIndex(['admin_id' => 1]);
+
+        $orders = $db->selectCollection('orders');
+        $orders->updateMany(
+            ['cogs' => ['$exists' => false]],
+            ['$set' => ['cogs' => 0]]
+        );
+
         $this->info('MongoDB inventory indexes created.');
 
         return self::SUCCESS;

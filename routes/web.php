@@ -156,6 +156,12 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::get('/inventory', [\App\Http\Controllers\Admin\InventoryController::class, 'index'])->name('inventory.index');
             Route::get('/inventory/log', [\App\Http\Controllers\Admin\InventoryController::class, 'log'])->name('inventory.log');
             Route::post('/inventory/adjust', [\App\Http\Controllers\Admin\InventoryController::class, 'adjust'])->name('inventory.adjust');
+
+            Route::get('/reports/profit-loss', [\App\Http\Controllers\Admin\ReportController::class, 'profitLoss'])->name('reports.profit-loss');
+            Route::get('/reports/inventory-details', [\App\Http\Controllers\Admin\ReportController::class, 'inventoryDetails'])->name('reports.inventory-details');
+            Route::get('/reports/export', [\App\Http\Controllers\Admin\ReportController::class, 'exportCsv'])->name('reports.export');
+            Route::resource('expenses', \App\Http\Controllers\Admin\ExpenseController::class)->except(['show', 'create']);
+
             Route::resource('coupons', AdminCouponController::class)->except(['show']);
 
             Route::get('/orders', [AdminOrderController::class, 'index'])->name('orders.index');

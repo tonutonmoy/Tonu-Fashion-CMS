@@ -46,6 +46,7 @@ class DashboardController extends Controller
         return view('admin.dashboard', [
             'stats' => $stats,
             'inventory' => $inventory,
+            'lowStockProducts' => $inventory['low_stock_products'],
             'courier' => Cache::remember('admin.dashboard.courier', 120, fn () => $this->courierStats->stats()),
             'activityLogs' => $this->activity->recent(8),
             'recentOrders' => Cache::remember('admin.dashboard.recent_orders', 60, fn () => Order::query()

@@ -6,6 +6,31 @@
         <h1 class="text-base sm:text-lg font-semibold text-gray-900 truncate">@yield('title', 'Dashboard')</h1>
     </div>
     <div class="flex items-center gap-2 sm:gap-3 shrink-0">
+        @if(auth()->user()?->canAdmin('store') && ($lowStockCount ?? 0) > 0)
+        <div class="relative" data-admin-low-stock>
+            <button type="button" class="relative theme-icon-btn" aria-label="Low stock alerts" data-admin-low-stock-toggle>
+                <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+                <span class="absolute -top-1 -right-1 min-w-[1.125rem] h-[1.125rem] px-1 rounded-full bg-orange-500 text-white text-[10px] font-bold flex items-center justify-center">{{ $lowStockCount }}</span>
+            </button>
+            <div class="hidden absolute right-0 mt-2 w-72 sm:w-80 bg-white border border-gray-200 rounded-xl shadow-xl z-50" data-admin-low-stock-panel>
+                <div class="px-4 py-3 border-b border-gray-100 font-semibold text-sm flex items-center justify-between">
+                    <span>Low Stock Alert</span>
+                    <a href="{{ route('admin.inventory.index', ['low_stock' => 1]) }}" class="text-xs text-brand-600 font-medium">View all</a>
+                </div>
+                <div class="max-h-72 overflow-y-auto divide-y divide-gray-100 text-sm">
+                    @foreach($lowStockProducts ?? [] as $item)
+                    <div class="px-4 py-3 flex justify-between gap-3">
+                        <div class="min-w-0">
+                            <p class="font-medium truncate">{{ $item['product_name'] }}</p>
+                            <p class="text-xs text-gray-500 truncate">{{ $item['variant_label'] }}</p>
+                        </div>
+                        <span class="font-semibold text-orange-600 shrink-0">{{ $item['available_stock'] }} left</span>
+                    </div>
+                    @endforeach
+                </div>
+            </div>
+        </div>
+        @endif
         <x-color-mode-toggle />
         <a href="{{ route('home') }}" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 text-xs sm:text-sm text-gray-600 hover:text-gray-900 font-medium px-2 py-1 rounded-lg hover:bg-gray-100" data-turbo="false">{{ __('admin.view_store') }}</a>
         <form method="POST" action="{{ route('logout') }}">@csrf<button type="submit" class="text-xs sm:text-sm text-red-600 hover:text-red-700">{{ __('common.logout') }}</button></form>

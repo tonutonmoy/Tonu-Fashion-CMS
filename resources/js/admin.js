@@ -624,6 +624,42 @@ const initAdminCsrfGuard = () => {
     });
 };
 
+const initAdminNavGroups = () => {
+    document.querySelectorAll('[data-admin-nav-group]').forEach((group) => {
+        const button = group.querySelector('button');
+        const children = group.querySelector('[data-admin-nav-children]');
+        const chevron = group.querySelector('.admin-nav-chevron');
+        if (!button || !children) return;
+
+        button.addEventListener('click', () => {
+            const expanded = button.getAttribute('aria-expanded') === 'true';
+            button.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+            children.classList.toggle('hidden', expanded);
+            chevron?.classList.toggle('rotate-180', !expanded);
+        });
+    });
+};
+
+const initLowStockBell = () => {
+    const root = document.querySelector('[data-admin-low-stock]');
+    if (!root) return;
+
+    const toggle = root.querySelector('[data-admin-low-stock-toggle]');
+    const panel = root.querySelector('[data-admin-low-stock-panel]');
+    if (!toggle || !panel) return;
+
+    toggle.addEventListener('click', (event) => {
+        event.stopPropagation();
+        panel.classList.toggle('hidden');
+    });
+
+    document.addEventListener('click', (event) => {
+        if (!root.contains(event.target)) {
+            panel.classList.add('hidden');
+        }
+    });
+};
+
 const initAdmin = () => {
     if (!document.body.classList.contains('admin-body')) {
         return;
@@ -636,6 +672,8 @@ const initAdmin = () => {
     initUploaders();
     initVariantBuilder();
     initConfirmModal();
+    initAdminNavGroups();
+    initLowStockBell();
 };
 
 document.addEventListener('DOMContentLoaded', initAdmin);

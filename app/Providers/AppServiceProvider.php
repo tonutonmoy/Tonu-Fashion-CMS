@@ -11,6 +11,7 @@ use App\Services\FooterBuilderService;
 use App\Services\MenuBuilderService;
 use App\Services\StorefrontCacheService;
 use App\Services\ThemeCustomizerService;
+use App\Services\InventoryService;
 use App\Services\ThemeService;
 use Illuminate\Cache\Events\CacheHit;
 use Illuminate\Cache\Events\CacheMissed;
@@ -94,10 +95,23 @@ class AppServiceProvider extends ServiceProvider
             ]);
         });
 
-        View::composer(['layouts.admin'], function ($view) {
-            $view->with('storeSettings', [
-                'name' => setting('name', config('app.name')),
-            ]);
+        View::composer(['layouts.admin', 'partials.admin.header'], function ($view) {
+            $payload = [
+                'storeSettings' => [
+                    'name' => setting('name', config('app.name')),
+                ],
+            ];
+
+            if (auth()->check() && auth()->user()?->canAdmin('store')) {
+                $inventory = Cache::remember('admin.dashboard.inventory', 120, fn () => app(InventoryService::class)->summary());
+                $payload['lowStockProducts'] = $inventory['low_stock_products'];
+                $payload['lowStockCount'] = $inventory['low_stock_count'];
+            } else {
+                $payload['lowStockProducts'] = [];
+                $payload['lowStockCount'] = 0;
+            }
+
+            $view->with($payload);
         });
 
         View::composer([

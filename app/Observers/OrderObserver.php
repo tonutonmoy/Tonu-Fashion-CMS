@@ -5,11 +5,13 @@ namespace App\Observers;
 use App\Enums\OrderStatus;
 use App\Models\Order;
 use App\Services\InventoryService;
+use App\Services\ReportService;
 
 class OrderObserver
 {
     public function __construct(
         private InventoryService $inventory,
+        private ReportService $reports,
     ) {}
 
     public function updating(Order $order): void
@@ -33,6 +35,10 @@ class OrderObserver
             $this->inventory->deductForOrder($order);
 
             return;
+        }
+
+        if ($next === OrderStatus::Delivered && $previous !== OrderStatus::Delivered) {
+            $order->cogs = $this->reports->calculateOrderCogs($order);
         }
 
         if (in_array($next, [OrderStatus::Cancelled, OrderStatus::Returned], true)

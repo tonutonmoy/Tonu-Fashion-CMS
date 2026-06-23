@@ -37,7 +37,9 @@ use App\Repositories\Eloquent\ReviewRepository;
 use App\Repositories\Eloquent\SettingRepository;
 use App\Repositories\Eloquent\UserRepository;
 use App\Repositories\Contracts\UserRepositoryInterface;
+use App\Repositories\Contracts\ExpenseRepositoryInterface;
 use App\Repositories\Eloquent\BrandRepository;
+use App\Repositories\Eloquent\ExpenseRepository;
 use Illuminate\Support\ServiceProvider;
 
 class RepositoryServiceProvider extends ServiceProvider
@@ -61,6 +63,7 @@ class RepositoryServiceProvider extends ServiceProvider
         MenuRepositoryInterface::class => MenuRepository::class,
         MediaRepositoryInterface::class => MediaRepository::class,
         PostRepositoryInterface::class => PostRepository::class,
+        ExpenseRepositoryInterface::class => ExpenseRepository::class,
     ];
 
     public function register(): void
