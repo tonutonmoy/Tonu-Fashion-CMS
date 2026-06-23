@@ -62,7 +62,7 @@ class DashboardController extends Controller
             'courierPage' => $courierPage,
             'courierTotal' => $courierPerformance->count(),
             'courierPerPage' => $perPage,
-            'activityLogs' => $this->activity->paginateAdmin($perPage),
+            'activityLogs' => $this->activity->paginateAdmin($perPage, 'activity_page'),
             'recentOrders' => Order::query()
                 ->with(['user:id,name', 'courierParcel:id,order_id,current_status'])
                 ->latest()

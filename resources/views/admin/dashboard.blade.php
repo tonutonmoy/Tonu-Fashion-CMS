@@ -6,8 +6,6 @@
 @php
     $defaultLocale = setting('default_locale', config('locales.default', 'en'));
     $defaultColorMode = setting('default_color_mode', config('locales.default_color_mode', 'light'));
-    $lowStockPages = max(1, (int) ceil($lowStockTotal / max(1, $lowStockPerPage)));
-    $courierPages = max(1, (int) ceil($courierTotal / max(1, $courierPerPage)));
 @endphp
 
 @if(auth()->user()?->canAdmin('settings'))
@@ -144,17 +142,11 @@
       <p class="px-4 py-6 text-gray-500">All items are above low-stock threshold.</p>
       @endforelse
     </div>
-    @if($lowStockPages > 1)
-    <div class="px-4 py-3 border-t border-gray-100 flex justify-between text-sm">
-      @if($lowStockPage > 1)
-      <a href="{{ request()->fullUrlWithQuery(['low_stock_page' => $lowStockPage - 1]) }}" class="text-brand-600">← Prev</a>
-      @else<span></span>@endif
-      <span class="text-gray-500">Page {{ $lowStockPage }} / {{ $lowStockPages }}</span>
-      @if($lowStockPage < $lowStockPages)
-      <a href="{{ request()->fullUrlWithQuery(['low_stock_page' => $lowStockPage + 1]) }}" class="text-brand-600">Next →</a>
-      @else<span></span>@endif
-    </div>
-    @endif
+    <x-admin.dashboard-pagination
+        :page="$lowStockPage"
+        :total="$lowStockTotal"
+        :per-page="$lowStockPerPage"
+        param="low_stock_page" />
   </div>
 </div>
 @endif
@@ -189,17 +181,11 @@
         </tbody>
       </table>
     </div>
-    @if($courierPages > 1)
-    <div class="px-4 py-3 border-t border-gray-100 flex justify-between text-sm">
-      @if($courierPage > 1)
-      <a href="{{ request()->fullUrlWithQuery(['courier_page' => $courierPage - 1]) }}" class="text-brand-600">← Prev</a>
-      @else<span></span>@endif
-      <span class="text-gray-500">Page {{ $courierPage }} / {{ $courierPages }}</span>
-      @if($courierPage < $courierPages)
-      <a href="{{ request()->fullUrlWithQuery(['courier_page' => $courierPage + 1]) }}" class="text-brand-600">Next →</a>
-      @else<span></span>@endif
-    </div>
-    @endif
+    <x-admin.dashboard-pagination
+        :page="$courierPage"
+        :total="$courierTotal"
+        :per-page="$courierPerPage"
+        param="courier_page" />
   </div>
   <div class="card">
     <div class="p-4 border-b border-gray-200 font-semibold flex items-center justify-between">
@@ -219,7 +205,7 @@
       <p class="px-4 py-6 text-gray-500">No activity yet.</p>
       @endforelse
     </div>
-    <div class="px-4 py-3 border-t border-gray-100">{{ $activityLogs->links() }}</div>
+    <div class="px-4 py-3 border-t border-gray-100">{{ $activityLogs->withQueryString()->links() }}</div>
   </div>
 </div>
 
@@ -252,6 +238,6 @@
       </tbody>
     </table>
   </div>
-  <div class="px-4 py-3 border-t border-gray-100">{{ $recentOrders->links() }}</div>
+  <div class="px-4 py-3 border-t border-gray-100">{{ $recentOrders->withQueryString()->links() }}</div>
 </div>
 @endsection

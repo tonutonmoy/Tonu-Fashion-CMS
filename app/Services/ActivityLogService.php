@@ -26,10 +26,14 @@ class ActivityLogService
         return ActivityLog::query()->with('user')->latest()->limit($limit)->get();
     }
 
-    public function paginateAdmin(?int $perPage = null)
+    public function paginateAdmin(?int $perPage = null, string $pageName = 'page')
     {
         $perPage ??= admin_per_page();
 
-        return ActivityLog::query()->with('user')->latest()->paginate($perPage)->withQueryString();
+        return ActivityLog::query()
+            ->with('user')
+            ->latest()
+            ->paginate($perPage, ['*'], $pageName)
+            ->withQueryString();
     }
 }
