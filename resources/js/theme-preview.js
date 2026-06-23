@@ -1,6 +1,8 @@
 /**
  * Website Builder — live theme customizer preview (WordPress-style).
  */
+import { onPageLoad } from './page-load';
+
 const PREVIEW_DESKTOP_WIDTH = 1280;
 
 const slugify = (value) => value
@@ -200,27 +202,23 @@ const replaceFileInput = (input, file) => {
 
 const initBuilderMode = () => {
     const shell = document.querySelector('[data-builder-shell]');
-    if (!shell) return;
-    document.body.classList.add('builder-mode');
     const sidebar = document.getElementById('admin-sidebar');
     const overlay = document.getElementById('admin-sidebar-overlay');
+
+    if (!shell) {
+        document.body.classList.remove('builder-mode');
+        sidebar?.classList.remove('is-open');
+        return;
+    }
+
+    document.body.classList.add('builder-mode');
+
     if (sidebar) {
         sidebar.classList.add('-translate-x-full');
-        sidebar.classList.remove('lg:translate-x-0');
+        sidebar.classList.remove('lg:translate-x-0', 'is-open');
     }
-    document.querySelector('[data-admin-sidebar-open]')?.addEventListener('click', () => {
-        sidebar?.classList.add('is-open');
-        sidebar?.classList.remove('-translate-x-full');
-        overlay?.classList.remove('hidden');
-    });
-    document.querySelector('[data-builder-nav-toggle]')?.addEventListener('click', (e) => {
-        const body = document.querySelector('[data-builder-nav-body]');
-        const btn = e.currentTarget;
-        const chevron = btn.querySelector('[data-builder-nav-chevron]');
-        const collapsed = body?.classList.toggle('is-collapsed');
-        btn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
-        chevron?.classList.toggle('rotate-180', !collapsed);
-    });
+
+    overlay?.classList.add('hidden');
 };
 
 const initThemeCustomizerLive = () => {
@@ -563,9 +561,33 @@ const initBuilderPreview = () => {
     window.addEventListener('resize', scheduleFitDesktopPreview);
 };
 
-document.addEventListener('DOMContentLoaded', () => {
+const initBuilderNavToggle = () => {
+    if (document.documentElement.dataset.builderNavToggle === '1') {
+        return;
+    }
+
+    document.documentElement.dataset.builderNavToggle = '1';
+
+    document.addEventListener('click', (event) => {
+        const btn = event.target.closest('[data-builder-nav-toggle]');
+        if (!btn) {
+            return;
+        }
+
+        const body = document.querySelector('[data-builder-nav-body]');
+        const chevron = btn.querySelector('[data-builder-nav-chevron]');
+        const collapsed = body?.classList.toggle('is-collapsed');
+        btn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+        chevron?.classList.toggle('rotate-180', !collapsed);
+    });
+};
+
+const bootBuilderUi = () => {
     initBuilderMode();
+    initBuilderNavToggle();
     initThemeCustomizerLive();
     initPreviewSlugSync();
     initBuilderPreview();
-});
+};
+
+onPageLoad(bootBuilderUi);

@@ -430,39 +430,16 @@
         @apply flex lg:hidden;
     }
 
-    .admin-turbo-progress {
-        position: fixed;
-        top: 0;
-        left: 0;
-        height: 2px;
-        width: 0;
-        z-index: 250;
-        pointer-events: none;
-        opacity: 0;
-        background: linear-gradient(90deg, #dc2626, #f97316);
-        transition: opacity 0.12s ease;
-    }
-
-    .admin-turbo-progress.is-active {
-        opacity: 1;
-        animation: admin-turbo-progress 0.65s ease-in-out infinite alternate;
-    }
-
-    @keyframes admin-turbo-progress {
-        from { width: 18%; }
-        to { width: 82%; }
-    }
-
-    html.is-turbo-navigating .admin-body main {
-        opacity: 0.97;
-    }
-
     body.builder-mode .admin-sidebar-toggle-btn {
         @apply flex;
     }
 
     body.builder-mode #admin-sidebar {
         position: fixed !important;
+        transform: translateX(-100%) !important;
+    }
+
+    body.builder-mode #admin-sidebar.lg\:translate-x-0 {
         transform: translateX(-100%) !important;
     }
 
@@ -480,6 +457,11 @@
 
     body.builder-mode main {
         @apply p-2 sm:p-3 lg:p-4;
+    }
+
+    .turbo-progress-bar,
+    #turbo-progress {
+        display: none !important;
     }
 
     .builder-shell-with-preview .builder-shell-grid {

@@ -1,6 +1,8 @@
 /**
  * CMS builder: rich editor, media picker, menu builder, homepage reorder, tags.
  */
+import { onPageLoad } from './page-load';
+
 const initRichEditors = () => {
     document.querySelectorAll('[data-rich-editor]').forEach((root) => {
         const body = root.querySelector('[data-editor-body]');
@@ -781,6 +783,6 @@ const initCmsBuilder = () => {
     initHeroSlidePreviewRefresh();
 };
 
-document.addEventListener('DOMContentLoaded', initCmsBuilder);
+onPageLoad(initCmsBuilder);
 
 window.refreshBuilderPreview = refreshBuilderPreview;

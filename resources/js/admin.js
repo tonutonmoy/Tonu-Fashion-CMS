@@ -40,17 +40,9 @@ const initToasts = () => {
     });
 };
 
-const showLoading = (message = 'Please wait…') => {
-    const overlay = document.getElementById('admin-loading');
-    const text = document.getElementById('admin-loading-text');
-    if (!overlay) return;
-    if (text) text.textContent = message;
-    overlay.classList.remove('hidden');
-};
+const showLoading = () => {};
 
-const hideLoading = () => {
-    document.getElementById('admin-loading')?.classList.add('hidden');
-};
+const hideLoading = () => {};
 
 const initFormLoading = () => {
     if (document.documentElement.dataset.adminFormLoading === '1') {
@@ -64,7 +56,7 @@ const initFormLoading = () => {
         if (!form || !document.body.classList.contains('admin-body')) {
             return;
         }
-        if (event.defaultPrevented) {
+        if ((form.getAttribute('method') || 'get').toLowerCase() === 'get') {
             return;
         }
         if (form.dataset.noLoading === '1') {
@@ -73,17 +65,16 @@ const initFormLoading = () => {
         if (form.dataset.confirm && form.dataset.confirmed !== 'true') {
             return;
         }
-
-        showLoading(form.dataset.loadingMessage || 'Saving…');
     }, true);
-
-    document.addEventListener('turbo:load', hideLoading);
-    document.addEventListener('turbo:submit-end', hideLoading);
-    window.addEventListener('pageshow', hideLoading);
 };
 
 const initSlugFields = () => {
     document.querySelectorAll('[data-slug-source]').forEach((nameInput) => {
+        if (nameInput.dataset.slugBound === '1') {
+            return;
+        }
+
+        nameInput.dataset.slugBound = '1';
         const slugInput = document.querySelector(nameInput.dataset.slugTarget);
         if (!slugInput) {
             return;
@@ -669,18 +660,30 @@ const initAdminNavGroups = () => {
 
     document.documentElement.dataset.adminNavGroups = '1';
 
-    document.querySelectorAll('[data-admin-nav-group]').forEach((group) => {
-        const button = group.querySelector('button');
-        const children = group.querySelector('[data-admin-nav-children]');
-        const chevron = group.querySelector('.admin-nav-chevron');
-        if (!button || !children) return;
+    document.addEventListener('click', (event) => {
+        if (!document.body.classList.contains('admin-body')) {
+            return;
+        }
 
-        button.addEventListener('click', () => {
-            const expanded = button.getAttribute('aria-expanded') === 'true';
-            button.setAttribute('aria-expanded', expanded ? 'false' : 'true');
-            children.classList.toggle('hidden', expanded);
-            chevron?.classList.toggle('rotate-180', !expanded);
-        });
+        const button = event.target.closest('[data-admin-nav-group] > button');
+        if (!button) {
+            return;
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        const group = button.closest('[data-admin-nav-group]');
+        const children = group?.querySelector('[data-admin-nav-children]');
+        const chevron = group?.querySelector('.admin-nav-chevron');
+        if (!children) {
+            return;
+        }
+
+        const expanded = button.getAttribute('aria-expanded') === 'true';
+        button.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+        children.classList.toggle('hidden', expanded);
+        chevron?.classList.toggle('rotate-180', !expanded);
     });
 };
 

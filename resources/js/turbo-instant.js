@@ -3,6 +3,10 @@
  */
 
 function markInternalLinks(root = document) {
+    if (document.body?.classList.contains('admin-body')) {
+        return;
+    }
+
     root.querySelectorAll('a[href]').forEach((link) => {
         if (link.target === '_blank' || link.hasAttribute('download')) {
             return;

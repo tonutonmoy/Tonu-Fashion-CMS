@@ -1,3 +1,5 @@
+import { onPageLoad } from './page-load';
+
 const debounce = (fn, ms = 350) => {
     let timer;
     return (...args) => {
@@ -6,15 +8,38 @@ const debounce = (fn, ms = 350) => {
     };
 };
 
+const buildFilterUrl = (form) => {
+    const url = new URL(form.getAttribute('action') || window.location.pathname, window.location.origin);
+    const params = new URLSearchParams();
+
+    new FormData(form).forEach((value, key) => {
+        if (value !== null && String(value).trim() !== '') {
+            params.append(key, value);
+        }
+    });
+
+    url.search = params.toString();
+
+    return url.toString();
+};
+
 const submitFilterForm = (form) => {
-    if (!form || form.dataset.confirm && form.dataset.confirmed !== 'true') {
+    if (!form) {
         return;
     }
-    if (typeof form.requestSubmit === 'function') {
-        form.requestSubmit();
-    } else {
-        form.submit();
+
+    if (form.dataset.confirm && form.dataset.confirmed !== 'true') {
+        return;
     }
+
+    const target = buildFilterUrl(form);
+
+    if (window.Turbo?.visit) {
+        window.Turbo.visit(target, { action: 'replace' });
+        return;
+    }
+
+    window.location.href = target;
 };
 
 const initSearchSuggest = (input) => {
@@ -54,7 +79,11 @@ const initSearchSuggest = (input) => {
             return;
         }
         if (item.url) {
-            window.location.href = item.url;
+            if (window.Turbo?.visit) {
+                window.Turbo.visit(item.url);
+            } else {
+                window.location.href = item.url;
+            }
             return;
         }
         input.value = item.value ?? item.label ?? '';
@@ -142,6 +171,11 @@ export const initAdminAutoFilters = () => {
         }
         form.dataset.autoFilterBound = '1';
 
+        form.addEventListener('submit', (event) => {
+            event.preventDefault();
+            submitFilterForm(form);
+        });
+
         const debouncedSubmit = debounce(() => submitFilterForm(form), 400);
 
         form.querySelectorAll('input, select').forEach((el) => {
@@ -167,7 +201,5 @@ export const initAdminAutoFilters = () => {
         });
     });
 };
-
-import { onPageLoad } from './page-load';
 
 onPageLoad(initAdminAutoFilters);
