@@ -88,7 +88,7 @@ class ReportService
         $salesByKey = $items->groupBy(fn ($item) => $item->product_variant_id ?: 'product:'.$item->product_id)
             ->map(fn (Collection $group) => $group->sum('quantity'));
 
-        return $this->inventory->variantRows()->map(function (array $row) use ($salesByKey) {
+        return $this->inventory->cachedVariantRows()->map(function (array $row) use ($salesByKey) {
             $key = $row['is_variant'] ? $row['id'] : 'product:'.$row['product_id'];
 
             return [

@@ -38,15 +38,16 @@ class DashboardController extends Controller
 
         $inventory = Cache::remember('admin.dashboard.inventory', 120, fn () => $this->inventory->summary());
 
-        $lowStockPaginator = $this->inventory->variantRows()
+        $variantRows = $this->inventory->cachedVariantRows();
+        $lowStockRows = $variantRows
             ->filter(fn (array $row) => $row['available_stock'] < $this->inventory->lowStockThreshold())
             ->values();
 
         $lowStockPage = max(1, (int) $request->get('low_stock_page', 1));
-        $lowStockItems = $lowStockPaginator->forPage($lowStockPage, $perPage)->values();
-        $lowStockTotal = $lowStockPaginator->count();
+        $lowStockItems = $lowStockRows->forPage($lowStockPage, $perPage)->values();
 
-        $courierPerformance = collect(Cache::remember('admin.dashboard.courier', 120, fn () => $this->courierStats->stats())['courier_performance']);
+        $courier = Cache::remember('admin.dashboard.courier', 120, fn () => $this->courierStats->stats());
+        $courierPerformance = collect($courier['courier_performance']);
         $courierPage = max(1, (int) $request->get('courier_page', 1));
         $courierRows = $courierPerformance->forPage($courierPage, $perPage)->values();
 
@@ -55,9 +56,9 @@ class DashboardController extends Controller
             'inventory' => $inventory,
             'lowStockProducts' => $lowStockItems,
             'lowStockPage' => $lowStockPage,
-            'lowStockTotal' => $lowStockTotal,
+            'lowStockTotal' => $lowStockRows->count(),
             'lowStockPerPage' => $perPage,
-            'courier' => Cache::remember('admin.dashboard.courier', 120, fn () => $this->courierStats->stats()),
+            'courier' => $courier,
             'courierRows' => $courierRows,
             'courierPage' => $courierPage,
             'courierTotal' => $courierPerformance->count(),

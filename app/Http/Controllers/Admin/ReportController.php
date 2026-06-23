@@ -46,11 +46,11 @@ class ReportController extends Controller
         );
 
         $rows = $this->reports->getVariantSalesReport($start, $end);
-        $inventoryRows = $this->inventory->variantRows();
+        $totalStockValue = $this->inventory->cachedVariantRows()->sum('stock_value');
 
         return view('admin.reports.inventory_details', [
             'rows' => $rows,
-            'totalStockValue' => $inventoryRows->sum('stock_value'),
+            'totalStockValue' => $totalStockValue,
             'preset' => $preset,
             'startDate' => $request->get('start_date', $start->toDateString()),
             'endDate' => $request->get('end_date', $end->toDateString()),

@@ -112,19 +112,23 @@ class WarmStorefrontCacheCommand extends Command
         foreach (['en', 'bn'] as $locale) {
             app()->setLocale($locale);
 
-            foreach ($paths as $path) {
-                $this->renderPath($path, $host);
+            foreach (config('performance.color_modes', ['light', 'dark']) as $mode) {
+                foreach ($paths as $path) {
+                    $this->renderPath($path, $host, $mode);
+                }
             }
         }
 
         app()->setLocale(config('app.locale', 'en'));
-        $this->line('  storefront.html ('.count($paths).' pages x 2 locales)');
+        $modeCount = count(config('performance.color_modes', ['light', 'dark']));
+        $this->line('  storefront.html ('.count($paths).' pages x 2 locales x '.$modeCount.' modes)');
     }
 
-    private function renderPath(string $path, string $host): void
+    private function renderPath(string $path, string $host, string $colorMode = 'light'): void
     {
         $kernel = app(Kernel::class);
         $request = Request::create($path, 'GET');
+        $request->cookies->set('color_mode', $colorMode);
         $request->headers->set('Host', $host);
         $request->headers->set('Accept', 'text/html');
         $request->server->set('HTTP_HOST', $host);

@@ -32,6 +32,7 @@ class StorefrontCacheService
         $this->forgetLayout();
         $this->forgetShop();
         $this->forgetHtmlCache();
+        Cache::forget('admin.inventory.variant_rows');
     }
 
     public function forgetHomepage(): void
@@ -96,31 +97,29 @@ class StorefrontCacheService
         $routes = $route ? [$route] : ['home', 'shop.index', 'products.show'];
 
         foreach (['en', 'bn'] as $locale) {
-            foreach ($routes as $name) {
-                if ($name === 'products.show') {
-                    if ($slug) {
-                        Cache::forget($this->htmlCacheKey($name, $locale, $slug));
+            foreach ($this->colorModes() as $mode) {
+                foreach ($routes as $name) {
+                    if ($name === 'products.show') {
+                        if ($slug) {
+                            Cache::forget($this->htmlCacheKey($name, $locale, $slug, $mode));
+                        }
+
+                        continue;
                     }
 
-                    continue;
+                    Cache::forget($this->htmlCacheKey($name, $locale, '', $mode));
                 }
-
-                Cache::forget($this->htmlCacheKey($name, $locale, ''));
             }
         }
     }
 
-    public function htmlCacheKey(string $route, string $locale, string $slug = ''): string
+    public function htmlCacheKey(string $route, string $locale, string $slug = '', string $colorMode = 'light'): string
     {
-        return 'storefront.html.'.$route.'.'.$locale.'.'.md5($slug);
+        return 'storefront.html.'.$route.'.'.$locale.'.'.$colorMode.'.'.md5($slug);
     }
 
     public function recordCacheHit(): void
     {
-        if (! config('performance.profiling')) {
-            return;
-        }
-
         $stats = Cache::get('performance.cache_stats', ['hits' => 0, 'misses' => 0]);
         $stats['hits'] = ($stats['hits'] ?? 0) + 1;
         Cache::put('performance.cache_stats', $stats, 86400);
@@ -128,10 +127,6 @@ class StorefrontCacheService
 
     public function recordCacheMiss(): void
     {
-        if (! config('performance.profiling')) {
-            return;
-        }
-
         $stats = Cache::get('performance.cache_stats', ['hits' => 0, 'misses' => 0]);
         $stats['misses'] = ($stats['misses'] ?? 0) + 1;
         Cache::put('performance.cache_stats', $stats, 86400);
@@ -149,5 +144,11 @@ class StorefrontCacheService
             'misses' => $misses,
             'hit_rate' => $total > 0 ? round(($hits / $total) * 100, 1) : 0.0,
         ];
+    }
+
+  /** @return list<string> */
+    private function colorModes(): array
+    {
+        return config('performance.color_modes', app(ColorModeService::class)->supported());
     }
 }

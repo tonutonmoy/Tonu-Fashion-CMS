@@ -35,6 +35,8 @@ class StorefrontHtmlCacheMiddleware
                 ->header('X-Storefront-Cache', 'HIT');
         }
 
+        app(\App\Services\StorefrontCacheService::class)->recordCacheMiss();
+
         $response = $next($request);
 
         if ($this->canStore($response)) {

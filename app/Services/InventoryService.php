@@ -408,6 +408,11 @@ class InventoryService
             ->values();
     }
 
+    public function cachedVariantRows(): Collection
+    {
+        return Cache::remember('admin.inventory.variant_rows', 120, fn () => $this->variantRows());
+    }
+
     public function variantRows(bool $lowStockOnly = false, ?string $search = null): Collection
     {
         $query = ProductVariant::query()
@@ -503,7 +508,7 @@ class InventoryService
 
     public function summary(): array
     {
-        $rows = $this->variantRows();
+        $rows = $this->cachedVariantRows();
 
         return [
             'total_stock_value' => round($rows->sum('stock_value'), 2),
@@ -608,6 +613,7 @@ class InventoryService
     private function bustInventoryCache(): void
     {
         Cache::forget('admin.dashboard.inventory');
+        Cache::forget('admin.inventory.variant_rows');
     }
 
     private function assertPositiveQuantity(int $quantity): void

@@ -46,6 +46,10 @@ else
 fi
 
 set_env IMAGE_DRIVER auto
+set_env STOREFRONT_HTML_CACHE true
+set_env STOREFRONT_CACHE_TTL 7200
+set_env STOREFRONT_SYSTEM_FONTS true
+set_env PERFORMANCE_PROFILING false
 set_env IMAGEBB_API_URL "https://api.imgbb.com/1/upload"
 if [ -n "${IMAGEBB_API_KEY:-}" ]; then
   set_env IMAGEBB_API_KEY "${IMAGEBB_API_KEY}"
@@ -67,5 +71,6 @@ sudo -u www-data php -d memory_limit=512M artisan storefront:warm-cache --no-int
 sudo -u www-data php artisan config:cache
 sudo -u www-data php artisan route:cache
 sudo -u www-data php artisan view:cache
+bash "$APP/deploy/optimize-server.sh" 2>/dev/null || true
 systemctl restart php8.4-fpm 2>/dev/null || true
 echo "DEPLOY_MOBILE_OK"
