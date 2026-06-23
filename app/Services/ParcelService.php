@@ -25,6 +25,15 @@ class ParcelService
             throw new \RuntimeException('A courier parcel already exists for this order.');
         }
 
+        if ($order->status === OrderStatus::Pending) {
+            $this->orders->forceStatus($order->id, OrderStatus::Confirmed, notify: false);
+            $order->refresh();
+        }
+
+        if ($order->status->isTerminal()) {
+            throw new \RuntimeException('Cannot create a parcel for a '.$order->status->label().' order.');
+        }
+
         $courier ??= $this->settings->defaultCourier();
         $gateway = $this->couriers->gateway($courier);
 

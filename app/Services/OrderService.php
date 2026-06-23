@@ -18,6 +18,10 @@ class OrderService
     {
         $order = $this->orders->find($orderId);
 
+        if ($order->status === $status) {
+            return;
+        }
+
         if (! $order->status->canTransitionTo($status)) {
             throw new \InvalidArgumentException("Cannot transition from {$order->status->value} to {$status->value}");
         }

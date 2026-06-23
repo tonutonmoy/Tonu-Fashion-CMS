@@ -148,13 +148,19 @@
 
                 <label class="label">Update Status</label>
 
-                <select name="status" class="input">
+                <select name="status" class="input" id="order-status-select">
 
-                    @foreach($statuses as $status)<option value="{{ $status->value }}" @selected($order->status === $status)>{{ $status->label() }}</option>@endforeach
+                    @foreach($statuses as $status)
+                        @if($order->status === $status || $order->status->canTransitionTo($status))
+                            <option value="{{ $status->value }}" @selected($order->status === $status)>{{ $status->label() }}</option>
+                        @endif
+                    @endforeach
 
                 </select>
 
-                <button class="btn-primary w-full">Update</button>
+                <p class="text-xs text-gray-500">Use <strong>Create Parcel</strong> above to send this order to the courier.</p>
+
+                <button class="btn-primary w-full" id="order-status-submit">Update</button>
 
             </form>
 

@@ -81,8 +81,15 @@ class OrderController extends Controller
 
         $request->validate(['status' => 'required|in:'.implode(',', array_column(OrderStatus::cases(), 'value'))]);
 
+        $order = $this->orders->find($id);
+        $status = OrderStatus::from($request->status);
+
+        if ($order->status === $status) {
+            return back()->with('status', 'Order status is already '.$status->label().'.');
+        }
+
         try {
-            $this->orderService->updateStatus($id, OrderStatus::from($request->status));
+            $this->orderService->updateStatus($id, $status);
         } catch (\InvalidArgumentException $e) {
             return back()->with('error', $e->getMessage());
         }
