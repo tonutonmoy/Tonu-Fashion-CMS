@@ -13,7 +13,7 @@
     $openUrl = $openUrl ?? $previewUrl;
 @endphp
 
-<div class="builder-shell {{ $preview ? 'builder-shell-with-preview' : '' }}" data-builder-shell>
+<div class="builder-shell {{ $preview ? 'builder-shell-with-preview' : '' }}" data-builder-shell data-turbo="false">
     @include('admin.builder._nav')
 
     <div class="builder-shell-grid">

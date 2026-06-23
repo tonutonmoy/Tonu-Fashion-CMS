@@ -1,3 +1,5 @@
+import { onPageLoad } from './page-load';
+
 const slugify = (value) => value
     .toLowerCase()
     .trim()
@@ -51,18 +53,33 @@ const hideLoading = () => {
 };
 
 const initFormLoading = () => {
-    document.querySelectorAll('form').forEach((form) => {
-        if (form.dataset.noLoading === '1') return;
+    if (document.documentElement.dataset.adminFormLoading === '1') {
+        return;
+    }
 
-        form.addEventListener('submit', (event) => {
-            if (event.defaultPrevented) return;
-            if (form.dataset.confirm && form.dataset.confirmed !== 'true') return;
+    document.documentElement.dataset.adminFormLoading = '1';
 
-            showLoading(form.dataset.loadingMessage || 'Saving…');
-        });
-    });
+    document.addEventListener('submit', (event) => {
+        const form = event.target.closest?.('form');
+        if (!form || !document.body.classList.contains('admin-body')) {
+            return;
+        }
+        if (event.defaultPrevented) {
+            return;
+        }
+        if (form.dataset.noLoading === '1') {
+            return;
+        }
+        if (form.dataset.confirm && form.dataset.confirmed !== 'true') {
+            return;
+        }
 
-    window.addEventListener('pageshow', () => hideLoading());
+        showLoading(form.dataset.loadingMessage || 'Saving…');
+    }, true);
+
+    document.addEventListener('turbo:load', hideLoading);
+    document.addEventListener('turbo:submit-end', hideLoading);
+    window.addEventListener('pageshow', hideLoading);
 };
 
 const initSlugFields = () => {
@@ -132,6 +149,11 @@ const buildUploaderMarkup = (name, label, { multiple = false, compact = false } 
 
 const initUploaders = () => {
     document.querySelectorAll('[data-uploader]').forEach((uploader) => {
+        if (uploader.dataset.uploaderReady === '1') {
+            return;
+        }
+
+        uploader.dataset.uploaderReady = '1';
         if (uploader.dataset.uploaderReady === '1') return;
         uploader.dataset.uploaderReady = '1';
 
@@ -540,45 +562,55 @@ const initVariantBuilder = () => {
 };
 
 const initConfirmModal = () => {
-    const modal = document.getElementById('admin-confirm-modal');
-    if (!modal) {
+    if (document.documentElement.dataset.adminConfirmModal === '1') {
         return;
     }
 
-    let pendingForm = null;
-    const title = modal.querySelector('[data-confirm-title]');
-    const message = modal.querySelector('[data-confirm-message]');
-    const okBtn = modal.querySelector('[data-confirm-ok]');
+    document.documentElement.dataset.adminConfirmModal = '1';
 
+    let pendingForm = null;
+
+    const modal = () => document.getElementById('admin-confirm-modal');
     const close = () => {
-        modal.classList.add('hidden');
+        modal()?.classList.add('hidden');
         pendingForm = null;
     };
 
-    modal.querySelectorAll('[data-confirm-cancel]').forEach((el) => el.addEventListener('click', close));
-
-    okBtn?.addEventListener('click', () => {
-        if (pendingForm) {
-            pendingForm.dataset.confirmed = 'true';
-            pendingForm.submit();
+    document.addEventListener('click', (event) => {
+        if (event.target.closest('[data-confirm-cancel]')) {
+            close();
+            return;
         }
-        close();
+
+        if (event.target.closest('[data-confirm-ok]') && pendingForm) {
+            pendingForm.dataset.confirmed = 'true';
+            pendingForm.requestSubmit?.() || pendingForm.submit();
+            close();
+        }
     });
 
-    document.querySelectorAll('form[data-confirm]').forEach((form) => {
-        form.addEventListener('submit', (e) => {
-            if (form.dataset.confirmed === 'true') {
-                return;
-            }
+    document.addEventListener('submit', (event) => {
+        const form = event.target;
+        if (!form?.matches?.('form[data-confirm]')) {
+            return;
+        }
+        if (form.dataset.confirmed === 'true') {
+            return;
+        }
 
-            e.preventDefault();
-            pendingForm = form;
-            title.textContent = form.dataset.confirmTitle || 'Are you sure?';
-            message.textContent = form.dataset.confirmMessage || 'This action cannot be undone.';
-            okBtn.textContent = form.dataset.confirmOk || 'Confirm';
-            modal.classList.remove('hidden');
-        });
-    });
+        event.preventDefault();
+        pendingForm = form;
+
+        const root = modal();
+        if (!root) {
+            return;
+        }
+
+        root.querySelector('[data-confirm-title]').textContent = form.dataset.confirmTitle || 'Are you sure?';
+        root.querySelector('[data-confirm-message]').textContent = form.dataset.confirmMessage || 'This action cannot be undone.';
+        root.querySelector('[data-confirm-ok]').textContent = form.dataset.confirmOk || 'Confirm';
+        root.classList.remove('hidden');
+    }, true);
 };
 
 const refreshCsrfToken = async () => {
@@ -611,6 +643,12 @@ const refreshCsrfToken = async () => {
 };
 
 const initAdminCsrfGuard = () => {
+    if (document.documentElement.dataset.adminCsrfGuard === '1') {
+        return;
+    }
+
+    document.documentElement.dataset.adminCsrfGuard = '1';
+
     refreshCsrfToken().catch(() => {});
 
     window.setInterval(() => {
@@ -625,6 +663,12 @@ const initAdminCsrfGuard = () => {
 };
 
 const initAdminNavGroups = () => {
+    if (document.documentElement.dataset.adminNavGroups === '1') {
+        return;
+    }
+
+    document.documentElement.dataset.adminNavGroups = '1';
+
     document.querySelectorAll('[data-admin-nav-group]').forEach((group) => {
         const button = group.querySelector('button');
         const children = group.querySelector('[data-admin-nav-children]');
@@ -640,42 +684,39 @@ const initAdminNavGroups = () => {
     });
 };
 
-const initLowStockBell = () => {
-    const root = document.querySelector('[data-admin-low-stock]');
-    if (!root) return;
-
-    const toggle = root.querySelector('[data-admin-low-stock-toggle]');
-    const panel = root.querySelector('[data-admin-low-stock-panel]');
-    if (!toggle || !panel) return;
-
-    toggle.addEventListener('click', (event) => {
-        event.stopPropagation();
-        panel.classList.toggle('hidden');
-    });
-
-    document.addEventListener('click', (event) => {
-        if (!root.contains(event.target)) {
-            panel.classList.add('hidden');
-        }
-    });
-};
-
-const initAdmin = () => {
+const initAdminPage = () => {
     if (!document.body.classList.contains('admin-body')) {
         return;
     }
 
     initToasts();
-    initAdminCsrfGuard();
-    initFormLoading();
     initSlugFields();
     initUploaders();
     initVariantBuilder();
-    initConfirmModal();
-    initAdminNavGroups();
-    initLowStockBell();
 };
 
-document.addEventListener('DOMContentLoaded', initAdmin);
+const initAdminShell = () => {
+    if (!document.body.classList.contains('admin-body')) {
+        return;
+    }
+
+    initAdminCsrfGuard();
+    initFormLoading();
+    initConfirmModal();
+    initAdminNavGroups();
+};
+
+onPageLoad(() => {
+    initAdminShell();
+    initAdminPage();
+});
+
+document.addEventListener('turbo:before-visit', () => {
+    document.documentElement.classList.add('is-turbo-navigating');
+});
+
+document.addEventListener('turbo:load', () => {
+    document.documentElement.classList.remove('is-turbo-navigating');
+});
 
 window.AdminUI = { showToast, showLoading, hideLoading, refreshCsrfToken };

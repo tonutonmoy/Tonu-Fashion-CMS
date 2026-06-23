@@ -15,11 +15,15 @@ function markInternalLinks(root = document) {
                 return;
             }
 
-            if (/\.(pdf|zip|rar)$/i.test(url.pathname)) {
+            if (/\.(pdf|zip|rar|csv|xlsx)$/i.test(url.pathname)) {
                 return;
             }
 
-            link.removeAttribute('data-turbo-preload');
+            if (link.dataset.turbo === 'false') {
+                return;
+            }
+
+            link.setAttribute('data-turbo-preload', '');
         } catch {
             // ignore invalid URLs
         }

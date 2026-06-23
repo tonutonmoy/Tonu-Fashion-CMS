@@ -3,7 +3,7 @@ import * as Turbo from '@hotwired/turbo';
 window.Turbo = Turbo;
 
 if (Turbo.session?.drive) {
-    Turbo.session.drive.preloadOnHover = false;
+    Turbo.session.drive.preloadOnHover = true;
 }
 
 import './bootstrap';

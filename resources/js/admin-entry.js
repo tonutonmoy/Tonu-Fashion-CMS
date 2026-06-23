@@ -1,3 +1,4 @@
+import './admin-turbo';
 import './bootstrap';
 import './admin-filters';
 import './admin';

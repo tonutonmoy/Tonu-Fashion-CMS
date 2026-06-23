@@ -3,7 +3,7 @@
 @if($storeSettings['favicon'] ?? null)
     <link rel="icon" href="{{ image_url($storeSettings['favicon']) }}">
 @endif
-<meta name="turbo-prefetch" content="false">
+<meta name="turbo-prefetch" content="true">
 @if(! config('performance.use_system_fonts'))
 <link rel="dns-prefetch" href="https://fonts.googleapis.com">
 <link rel="dns-prefetch" href="https://fonts.gstatic.com">

@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\User;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 
 class AdminNotificationService
 {
@@ -18,7 +19,12 @@ class AdminNotificationService
 
     public function unreadLowStockCount(User $user): int
     {
-        $items = collect($this->inventory->summary()['low_stock_products']);
+        return $this->unreadLowStockCountFromSummary($this->inventory->summary(), $user);
+    }
+
+    public function unreadLowStockCountFromSummary(array $inventory, User $user): int
+    {
+        $items = collect($inventory['low_stock_products'] ?? []);
         if ($items->isEmpty()) {
             return 0;
         }
@@ -34,6 +40,8 @@ class AdminNotificationService
         $user->forceFill([
             'low_stock_alerts_seen_hash' => $items->isEmpty() ? null : $this->lowStockHash($items),
         ])->save();
+
+        Cache::forget("admin.header.notifications.{$user->id}");
     }
 
     public function payload(User $user): array

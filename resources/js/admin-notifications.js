@@ -1,3 +1,5 @@
+import { onPageLoad } from './page-load';
+
 const POLL_MS = 30000;
 
 function playNotificationSound() {
@@ -38,6 +40,31 @@ function updateLowStockBadge(count) {
     }
 }
 
+function renderLowStockItems(items, threshold) {
+    const list = document.querySelector('[data-admin-low-stock-list]');
+    if (!list) return;
+
+    if (!items?.length) {
+        list.innerHTML = '<p class="px-4 py-6 text-gray-500">No low-stock alerts.</p>';
+        return;
+    }
+
+    list.innerHTML = items.map((item) => `
+        <div class="px-4 py-3 flex justify-between gap-3">
+            <div class="min-w-0">
+                <p class="font-medium truncate">${item.product_name || ''}</p>
+                <p class="text-xs text-gray-500 truncate">${item.variant_label || ''}</p>
+            </div>
+            <span class="font-semibold text-orange-600 shrink-0">${item.available_stock ?? 0} left</span>
+        </div>
+    `).join('');
+
+    const heading = document.querySelector('[data-admin-low-stock-panel] .border-b span');
+    if (heading && threshold) {
+        heading.textContent = `Low Stock (< ${threshold})`;
+    }
+}
+
 async function markLowStockRead() {
     await fetch('/admin/api/notifications/mark-read', {
         method: 'POST',
@@ -55,7 +82,7 @@ async function pollNotifications(lastUnread) {
     const res = await fetch('/admin/api/notifications', {
         headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
     });
-    if (!res.ok) return lastUnread;
+    if (!res.ok) return { lastUnread, data: null };
 
     const data = await res.json();
     const unread = data.low_stock?.unread_count || 0;
@@ -65,45 +92,81 @@ async function pollNotifications(lastUnread) {
         playNotificationSound();
     }
 
-    return unread;
+    return { lastUnread: unread, data };
+}
+
+async function loadLowStockPanel(force = false) {
+    const list = document.querySelector('[data-admin-low-stock-list]');
+    if (!list) return;
+
+    if (list.dataset.loaded === '1' && !force) {
+        return;
+    }
+
+    list.dataset.loaded = 'loading';
+    const placeholder = list.querySelector('[data-admin-low-stock-placeholder]');
+    if (placeholder) {
+        placeholder.textContent = 'Loading…';
+    }
+
+    const { data } = await pollNotifications(null);
+    if (!data?.low_stock) {
+        list.innerHTML = '<p class="px-4 py-6 text-gray-500">Could not load alerts.</p>';
+        return;
+    }
+
+    renderLowStockItems(data.low_stock.items, data.low_stock.threshold);
+    list.dataset.loaded = '1';
 }
 
 function initAdminNotifications() {
     if (!document.body.classList.contains('admin-body')) return;
     if (!document.querySelector('[data-admin-low-stock]')) return;
+    if (document.documentElement.dataset.adminNotifications === '1') return;
+
+    document.documentElement.dataset.adminNotifications = '1';
 
     let lastUnread = null;
 
-    const toggle = document.querySelector('[data-admin-low-stock-toggle]');
     const panel = document.querySelector('[data-admin-low-stock-panel]');
-    const markReadBtn = document.querySelector('[data-admin-low-stock-mark-read]');
+    const root = document.querySelector('[data-admin-low-stock]');
 
-    toggle?.addEventListener('click', async (event) => {
-        event.stopPropagation();
-        panel?.classList.toggle('hidden');
-    });
+    document.addEventListener('click', async (event) => {
+        const toggle = event.target.closest('[data-admin-low-stock-toggle]');
+        if (toggle) {
+            event.stopPropagation();
+            const opening = panel?.classList.contains('hidden');
+            panel?.classList.toggle('hidden');
+            if (opening) {
+                await loadLowStockPanel();
+            }
+            return;
+        }
 
-    markReadBtn?.addEventListener('click', async (event) => {
-        event.preventDefault();
-        await markLowStockRead();
-        lastUnread = await pollNotifications(lastUnread);
-        panel?.classList.add('hidden');
-    });
-
-    document.addEventListener('click', (event) => {
-        const root = document.querySelector('[data-admin-low-stock]');
-        if (root && !root.contains(event.target)) {
+        const markReadBtn = event.target.closest('[data-admin-low-stock-mark-read]');
+        if (markReadBtn) {
+            event.preventDefault();
+            await markLowStockRead();
+            const result = await pollNotifications(lastUnread);
+            lastUnread = result.lastUnread;
+            await loadLowStockPanel(true);
             panel?.classList.add('hidden');
+            return;
+        }
+
+        if (root && panel && !root.contains(event.target)) {
+            panel.classList.add('hidden');
         }
     });
 
-    pollNotifications(lastUnread).then((count) => {
-        lastUnread = count;
+    pollNotifications(lastUnread).then((result) => {
+        lastUnread = result.lastUnread;
     });
 
     window.setInterval(async () => {
-        lastUnread = await pollNotifications(lastUnread);
+        const result = await pollNotifications(lastUnread);
+        lastUnread = result.lastUnread;
     }, POLL_MS);
 }
 
-document.addEventListener('DOMContentLoaded', initAdminNotifications);
+onPageLoad(initAdminNotifications);

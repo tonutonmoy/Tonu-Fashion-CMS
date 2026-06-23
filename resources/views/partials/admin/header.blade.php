@@ -17,18 +17,8 @@
                     <span>Low Stock (&lt; {{ $lowStockThreshold ?? 10 }})</span>
                     <button type="button" class="text-xs text-brand-600 font-medium" data-admin-low-stock-mark-read>Mark read</button>
                 </div>
-                <div class="max-h-72 overflow-y-auto divide-y divide-gray-100 text-sm">
-                    @forelse($lowStockProducts ?? [] as $item)
-                    <div class="px-4 py-3 flex justify-between gap-3">
-                        <div class="min-w-0">
-                            <p class="font-medium truncate">{{ $item['product_name'] }}</p>
-                            <p class="text-xs text-gray-500 truncate">{{ $item['variant_label'] }}</p>
-                        </div>
-                        <span class="font-semibold text-orange-600 shrink-0">{{ $item['available_stock'] }} left</span>
-                    </div>
-                    @empty
-                    <p class="px-4 py-6 text-gray-500">No low-stock alerts.</p>
-                    @endforelse
+                <div class="max-h-72 overflow-y-auto divide-y divide-gray-100 text-sm" data-admin-low-stock-list>
+                    <p class="px-4 py-6 text-gray-500" data-admin-low-stock-placeholder>Open to load alerts…</p>
                 </div>
                 <div class="px-4 py-3 border-t border-gray-100 text-right">
                     <a href="{{ route('admin.inventory.index', ['low_stock' => 1]) }}" class="text-xs text-brand-600 font-medium">View inventory</a>

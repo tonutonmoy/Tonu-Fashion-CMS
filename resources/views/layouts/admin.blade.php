@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="turbo-prefetch" content="true">
     <title>@yield('title', 'Admin') | {{ $storeSettings['name'] ?? config('app.name') }}</title>
     @vite(['resources/css/app.css', 'resources/js/admin-entry.js'])
 </head>

@@ -101,17 +101,28 @@ class AppServiceProvider extends ServiceProvider
                 'storeSettings' => [
                     'name' => setting('name', config('app.name')),
                 ],
+                'lowStockCount' => 0,
+                'lowStockThreshold' => app(InventoryService::class)->lowStockThreshold(),
             ];
 
             if (auth()->check() && auth()->user()?->canAdmin('store')) {
-                $inventory = Cache::remember('admin.dashboard.inventory', 120, fn () => app(InventoryService::class)->summary());
-                $notifications = app(AdminNotificationService::class);
-                $payload['lowStockProducts'] = $inventory['low_stock_products'];
-                $payload['lowStockCount'] = $notifications->unreadLowStockCount(auth()->user());
-                $payload['lowStockThreshold'] = $inventory['threshold'] ?? app(InventoryService::class)->lowStockThreshold();
-            } else {
-                $payload['lowStockProducts'] = [];
-                $payload['lowStockCount'] = 0;
+                $userId = (string) auth()->id();
+                $headerKey = "admin.header.notifications.{$userId}";
+
+                $cached = Cache::remember($headerKey, 120, function () {
+                    $inventory = app(InventoryService::class)->summary();
+
+                    return [
+                        'threshold' => $inventory['threshold'] ?? app(InventoryService::class)->lowStockThreshold(),
+                        'unread' => app(AdminNotificationService::class)->unreadLowStockCountFromSummary(
+                            $inventory,
+                            auth()->user(),
+                        ),
+                    ];
+                });
+
+                $payload['lowStockCount'] = $cached['unread'];
+                $payload['lowStockThreshold'] = $cached['threshold'];
             }
 
             $view->with($payload);

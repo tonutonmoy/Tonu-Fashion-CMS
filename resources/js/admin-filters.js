@@ -168,4 +168,6 @@ export const initAdminAutoFilters = () => {
     });
 };
 
-document.addEventListener('DOMContentLoaded', initAdminAutoFilters);
+import { onPageLoad } from './page-load';
+
+onPageLoad(initAdminAutoFilters);
