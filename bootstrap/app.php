@@ -46,8 +46,8 @@ return Application::configure(basePath: dirname(__DIR__))
             }
 
             return redirect()->back()
-                ->withInput()
-                ->withErrors(['_token' => 'Session expired. Refresh the page and submit again.']);
+            ->withInput()
+            ->with('error', 'Session expired. Refresh the page and try again.');
         });
 
         $exceptions->render(function (\Illuminate\Http\Exceptions\PostTooLargeException $e, $request) {

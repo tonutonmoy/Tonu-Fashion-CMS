@@ -75,11 +75,11 @@
         <div class="card p-6 space-y-3">
             <h2 class="font-semibold">Quick actions</h2>
             @if(!$parcel)
-            <form action="{{ route('admin.orders.parcel.create', $order) }}" method="POST">@csrf
+            <form action="{{ route('admin.orders.parcel.create', $order) }}" method="POST" data-loading-message="Creating parcel…">@csrf
                 <button type="submit" class="btn-primary w-full">📦 Create courier parcel</button>
             </form>
             @else
-            <form action="{{ route('admin.orders.parcel.sync', $order) }}" method="POST">@csrf
+            <form action="{{ route('admin.orders.parcel.sync', $order) }}" method="POST" data-loading-message="Syncing parcel…">@csrf
                 <button type="submit" class="btn-primary w-full bg-gray-700 hover:bg-gray-800">↻ Sync parcel status</button>
             </form>
             @endif
@@ -105,7 +105,7 @@
         @endif
 
         <div class="card p-6">
-            <form action="{{ route('admin.orders.status', $order->id) }}" method="POST" class="space-y-3">
+            <form action="{{ route('admin.orders.status', $order->id) }}" method="POST" class="space-y-3" data-loading-message="Updating status…">
                 @csrf @method('PATCH')
                 <h2 class="font-semibold">Change status</h2>
                 <select name="status" class="input">

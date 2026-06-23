@@ -17,7 +17,15 @@
             @if($hasUnpublishedChanges ?? false)
                 <span class="builder-draft-badge" title="Changes are visible in Live Preview only">Unpublished draft</span>
             @endif
-            <form action="{{ route('admin.builder.publish') }}" method="POST" class="inline" onsubmit="return confirm('Publish all draft changes to the live storefront?');">
+            <form
+                action="{{ route('admin.builder.publish') }}"
+                method="POST"
+                class="inline"
+                data-confirm
+                data-confirm-title="Publish to live site?"
+                data-confirm-message="All draft builder changes will go live on your storefront."
+                data-confirm-ok="Publish"
+            >
                 @csrf
                 <button type="submit" class="builder-publish-btn {{ ($hasUnpublishedChanges ?? false) ? 'has-changes' : '' }}">
                     Publish

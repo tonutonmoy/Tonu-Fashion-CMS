@@ -26,20 +26,23 @@ set_env DB_USERNAME "${DB_USER}"
 set_env DB_PASSWORD "${DB_PASS}"
 
 if command -v redis-cli >/dev/null 2>&1; then
-  set_env CACHE_STORE redis
-  set_env SESSION_DRIVER redis
-  set_env REDIS_HOST 127.0.0.1
-  set_env REDIS_PORT 6379
+  REDIS_OK=1
 else
   apt-get update -qq && apt-get install -y -qq redis-server >/dev/null 2>&1 || true
   systemctl enable redis-server 2>/dev/null || true
   systemctl start redis-server 2>/dev/null || true
-  if command -v redis-cli >/dev/null 2>&1; then
-    set_env CACHE_STORE redis
-    set_env SESSION_DRIVER redis
-    set_env REDIS_HOST 127.0.0.1
-    set_env REDIS_PORT 6379
-  fi
+  command -v redis-cli >/dev/null 2>&1 && REDIS_OK=1 || REDIS_OK=0
+fi
+
+# Sessions must stay on file — redis sessions break admin forms without phpredis
+set_env SESSION_DRIVER file
+
+if [ "${REDIS_OK:-0}" = "1" ] && php -m 2>/dev/null | grep -qi '^redis$'; then
+  set_env CACHE_STORE redis
+  set_env REDIS_HOST 127.0.0.1
+  set_env REDIS_PORT 6379
+else
+  set_env CACHE_STORE file
 fi
 
 set_env IMAGE_DRIVER auto

@@ -62,9 +62,7 @@ const initFormLoading = () => {
         });
     });
 
-    window.addEventListener('pageshow', (event) => {
-        if (event.persisted) hideLoading();
-    });
+    window.addEventListener('pageshow', () => hideLoading());
 };
 
 const initSlugFields = () => {
@@ -624,31 +622,6 @@ const initAdminCsrfGuard = () => {
             refreshCsrfToken().catch(() => {});
         }
     });
-
-    document.addEventListener('submit', async (event) => {
-        const form = event.target;
-        if (!(form instanceof HTMLFormElement)) {
-            return;
-        }
-
-        if (!form.closest('.admin-body') || form.method.toLowerCase() !== 'post') {
-            return;
-        }
-
-        if (form.dataset.confirmed !== 'true' && form.dataset.confirm) {
-            return;
-        }
-
-        if (form.dataset.csrfSubmitting === '1') {
-            form.dataset.csrfSubmitting = '0';
-            return;
-        }
-
-        event.preventDefault();
-        await refreshCsrfToken();
-        form.dataset.csrfSubmitting = '1';
-        form.requestSubmit();
-    }, true);
 };
 
 const initAdmin = () => {
