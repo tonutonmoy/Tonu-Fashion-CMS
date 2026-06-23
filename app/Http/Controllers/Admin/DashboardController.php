@@ -11,6 +11,7 @@ use App\Enums\UserRole;
 use App\Services\ActivityLogService;
 use App\Services\CourierDashboardService;
 use App\Services\InventoryService;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\View\View;
 
@@ -22,38 +23,51 @@ class DashboardController extends Controller
         private InventoryService $inventory,
     ) {}
 
-    public function index(): View
+    public function index(Request $request): View
     {
+        $perPage = admin_per_page();
+
         $stats = Cache::remember('admin.dashboard.stats', 120, function () {
             return [
                 'orders' => Order::query()->count(),
                 'pending_orders' => Order::query()->where('status', OrderStatus::Pending)->count(),
                 'products' => Product::query()->count(),
                 'customers' => User::query()->where('role', UserRole::Customer)->count(),
-                'revenue' => Order::query()
-                    ->whereIn('status', [
-                        OrderStatus::Delivered,
-                        OrderStatus::Courier,
-                        OrderStatus::Payment,
-                        OrderStatus::CallingStage,
-                    ])
-                    ->sum('total'),
             ];
         });
 
         $inventory = Cache::remember('admin.dashboard.inventory', 120, fn () => $this->inventory->summary());
 
+        $lowStockPaginator = $this->inventory->variantRows()
+            ->filter(fn (array $row) => $row['available_stock'] < $this->inventory->lowStockThreshold())
+            ->values();
+
+        $lowStockPage = max(1, (int) $request->get('low_stock_page', 1));
+        $lowStockItems = $lowStockPaginator->forPage($lowStockPage, $perPage)->values();
+        $lowStockTotal = $lowStockPaginator->count();
+
+        $courierPerformance = collect(Cache::remember('admin.dashboard.courier', 120, fn () => $this->courierStats->stats())['courier_performance']);
+        $courierPage = max(1, (int) $request->get('courier_page', 1));
+        $courierRows = $courierPerformance->forPage($courierPage, $perPage)->values();
+
         return view('admin.dashboard', [
             'stats' => $stats,
             'inventory' => $inventory,
-            'lowStockProducts' => $inventory['low_stock_products'],
+            'lowStockProducts' => $lowStockItems,
+            'lowStockPage' => $lowStockPage,
+            'lowStockTotal' => $lowStockTotal,
+            'lowStockPerPage' => $perPage,
             'courier' => Cache::remember('admin.dashboard.courier', 120, fn () => $this->courierStats->stats()),
-            'activityLogs' => $this->activity->recent(8),
-            'recentOrders' => Cache::remember('admin.dashboard.recent_orders', 60, fn () => Order::query()
+            'courierRows' => $courierRows,
+            'courierPage' => $courierPage,
+            'courierTotal' => $courierPerformance->count(),
+            'courierPerPage' => $perPage,
+            'activityLogs' => $this->activity->paginateAdmin($perPage),
+            'recentOrders' => Order::query()
                 ->with(['user:id,name', 'courierParcel:id,order_id,current_status'])
                 ->latest()
-                ->limit(10)
-                ->get()),
+                ->paginate($perPage, ['*'], 'orders_page')
+                ->withQueryString(),
         ]);
     }
 }

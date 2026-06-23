@@ -20,5 +20,7 @@ interface ExpenseRepositoryInterface
 
     public function sumBetween(Carbon $start, Carbon $end): float;
 
+    public function sumByCategoryBetween(string $category, Carbon $start, Carbon $end): float;
+
     public function chartTotalsBetween(Carbon $start, Carbon $end): Collection;
 }

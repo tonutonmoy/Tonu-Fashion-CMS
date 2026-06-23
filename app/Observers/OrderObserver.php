@@ -27,18 +27,29 @@ class OrderObserver
             return;
         }
 
-        if ($next === OrderStatus::Courier && $previous !== OrderStatus::Courier) {
-            $this->inventory->deductForOrder($order);
+        $wasPayment = $previous === OrderStatus::Payment;
+        $willPayment = $next === OrderStatus::Payment;
+
+        if (! $wasPayment && $willPayment) {
+            $order->cogs = $this->reports->calculateOrderCogs($order);
+            $this->inventory->settleForOrder($order);
+            $order->payment_at = $order->payment_at ?? now();
 
             return;
         }
 
-        if ($next === OrderStatus::Delivered && $previous !== OrderStatus::Delivered) {
-            $order->cogs = $this->reports->calculateOrderCogs($order);
+        if ($wasPayment && ! $willPayment) {
+            $this->inventory->unsettleForOrder($order);
+            $order->inventory_settled = false;
+            $order->cogs = 0;
+            $order->payment_at = null;
+
+            return;
         }
 
         if (in_array($next, [OrderStatus::Cancelled, OrderStatus::Returned], true)
-            && ! in_array($previous, [OrderStatus::Cancelled, OrderStatus::Returned], true)) {
+            && ! in_array($previous, [OrderStatus::Cancelled, OrderStatus::Returned], true)
+            && ! $wasPayment) {
             $this->inventory->rollbackForOrder($order);
         }
     }

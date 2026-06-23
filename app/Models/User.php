@@ -25,6 +25,7 @@ class User extends Authenticatable
         'blog_blocked',
         'admin_permissions',
         'avatar',
+        'low_stock_alerts_seen_hash',
     ];
 
     protected $hidden = [

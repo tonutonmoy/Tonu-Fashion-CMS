@@ -60,6 +60,23 @@ function notifyAdmin(message) {
     });
 }
 
+function playAlertSound() {
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = 880;
+        gain.gain.value = 0.08;
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        setTimeout(() => { osc.stop(); ctx.close(); }, 180);
+    } catch {
+        // ignore
+    }
+}
+
 function renderAdminMessage(msg) {
     const isAdmin = msg.sender_type === 'admin';
     return `<div class="support-msg ${isAdmin ? 'support-msg--admin' : 'support-msg--customer'}" data-id="${msg.id}">
@@ -101,6 +118,7 @@ async function pollNotifications(sinceMessageId) {
         if (sinceMessageId && msg.id > sinceMessageId) {
             showToast(msg);
             notifyAdmin(msg);
+            playAlertSound();
         }
     });
     return { sinceMessageId: lastId, unread: data.unread_count || 0 };

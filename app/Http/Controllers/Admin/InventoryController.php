@@ -8,28 +8,48 @@ use App\Http\Requests\Admin\AdjustInventoryRequest;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Services\InventoryService;
+use App\Services\SettingService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\View\View;
 
 class InventoryController extends Controller
 {
     public function __construct(
         private InventoryService $inventory,
+        private SettingService $settings,
     ) {}
 
     public function index(Request $request): View
     {
         $lowStockOnly = $request->boolean('low_stock');
-        $rows = $this->inventory->variantRows($lowStockOnly, $request->get('search'));
+        $groups = $this->inventory->productGroupedRows($lowStockOnly, $request->get('search'));
 
         return view('admin.inventory.index', [
-            'rows' => $rows,
-            'totalStockValue' => $rows->sum('stock_value'),
+            'groups' => $groups,
+            'totalStockValue' => $groups->sum('stock_value'),
             'lowStockOnly' => $lowStockOnly,
-            'threshold' => InventoryService::LOW_STOCK_THRESHOLD,
+            'threshold' => $this->inventory->lowStockThreshold(),
         ]);
+    }
+
+    public function updatePreferences(Request $request): RedirectResponse
+    {
+        abort_unless($request->user()?->canAdmin('store'), 403);
+
+        $request->validate([
+            'low_stock_threshold' => ['required', 'integer', 'min:1', 'max:1000'],
+        ]);
+
+        $this->settings->updateStore([
+            'low_stock_threshold' => (string) $request->integer('low_stock_threshold'),
+        ]);
+
+        Cache::forget('admin.dashboard.inventory');
+
+        return back()->with('success', 'Inventory preferences saved.');
     }
 
     public function log(Request $request): View
@@ -88,6 +108,8 @@ class InventoryController extends Controller
 
             return back()->with('error', $e->getMessage());
         }
+
+        Cache::forget('admin.dashboard.inventory');
 
         if ($request->expectsJson()) {
             return response()->json(['message' => 'Stock updated successfully.']);

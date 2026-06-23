@@ -42,7 +42,9 @@ class Order extends BaseModel
         'confirmed_at',
         'shipped_at',
         'delivered_at',
+        'payment_at',
         'cancelled_at',
+        'inventory_settled',
     ];
 
     protected function casts(): array
@@ -59,7 +61,9 @@ class Order extends BaseModel
             'confirmed_at' => 'datetime',
             'shipped_at' => 'datetime',
             'delivered_at' => 'datetime',
+            'payment_at' => 'datetime',
             'cancelled_at' => 'datetime',
+            'inventory_settled' => 'boolean',
         ];
     }
 

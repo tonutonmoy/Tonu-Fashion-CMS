@@ -6,6 +6,8 @@
 @php
     $defaultLocale = setting('default_locale', config('locales.default', 'en'));
     $defaultColorMode = setting('default_color_mode', config('locales.default_color_mode', 'light'));
+    $lowStockPages = max(1, (int) ceil($lowStockTotal / max(1, $lowStockPerPage)));
+    $courierPages = max(1, (int) ceil($courierTotal / max(1, $courierPerPage)));
 @endphp
 
 @if(auth()->user()?->canAdmin('settings'))
@@ -75,7 +77,7 @@
   </div>
 </div>
 
-<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-8">
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
   <div class="card p-6 flex items-start gap-4">
     <div class="w-12 h-12 rounded-xl bg-gray-100 text-gray-700 flex items-center justify-center shrink-0">
       <x-admin.icon name="orders" class="w-6 h-6" />
@@ -112,24 +114,6 @@
       <p class="text-3xl font-bold">{{ $stats['customers'] }}</p>
     </div>
   </div>
-  <div class="card p-6 flex items-start gap-4">
-    <div class="w-12 h-12 rounded-xl bg-brand-100 text-brand-700 flex items-center justify-center shrink-0">
-      <x-admin.icon name="chart" class="w-6 h-6" />
-    </div>
-    <div>
-      <p class="text-sm text-gray-500">Delivery Rate</p>
-      <p class="text-3xl font-bold text-brand-600">{{ $courier['delivery_rate'] }}%</p>
-    </div>
-  </div>
-  <div class="card p-6 flex items-start gap-4">
-    <div class="w-12 h-12 rounded-xl bg-green-100 text-green-700 flex items-center justify-center shrink-0">
-      <x-admin.icon name="revenue" class="w-6 h-6" />
-    </div>
-    <div>
-      <p class="text-sm text-gray-500">Revenue</p>
-      <p class="text-3xl font-bold text-green-600">{{ format_bdt($stats['revenue']) }}</p>
-    </div>
-  </div>
 </div>
 
 @if(auth()->user()?->canAdmin('store'))
@@ -144,11 +128,11 @@
   </div>
   <div class="card">
     <div class="p-4 border-b border-gray-200 font-semibold flex items-center justify-between">
-      <span>Low Stock Alert (&lt; 10)</span>
+      <span>Low Stock Alert (&lt; {{ $inventory['threshold'] ?? 10 }})</span>
       <span class="text-sm font-normal text-orange-600">{{ $inventory['low_stock_count'] }} items</span>
     </div>
-    <div class="divide-y divide-gray-100 text-sm max-h-64 overflow-y-auto">
-      @forelse($inventory['low_stock_products'] as $item)
+    <div class="divide-y divide-gray-100 text-sm">
+      @forelse($lowStockProducts as $item)
       <div class="px-4 py-3 flex justify-between gap-3">
         <div>
           <p class="font-medium">{{ $item['product_name'] }}</p>
@@ -160,6 +144,17 @@
       <p class="px-4 py-6 text-gray-500">All items are above low-stock threshold.</p>
       @endforelse
     </div>
+    @if($lowStockPages > 1)
+    <div class="px-4 py-3 border-t border-gray-100 flex justify-between text-sm">
+      @if($lowStockPage > 1)
+      <a href="{{ request()->fullUrlWithQuery(['low_stock_page' => $lowStockPage - 1]) }}" class="text-brand-600">← Prev</a>
+      @else<span></span>@endif
+      <span class="text-gray-500">Page {{ $lowStockPage }} / {{ $lowStockPages }}</span>
+      @if($lowStockPage < $lowStockPages)
+      <a href="{{ request()->fullUrlWithQuery(['low_stock_page' => $lowStockPage + 1]) }}" class="text-brand-600">Next →</a>
+      @else<span></span>@endif
+    </div>
+    @endif
   </div>
 </div>
 @endif
@@ -181,7 +176,7 @@
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-100">
-          @forelse($courier['courier_performance'] as $row)
+          @forelse($courierRows as $row)
           <tr>
             <td class="px-4 py-3 capitalize">{{ $row['courier'] }}</td>
             <td class="px-4 py-3 text-right">{{ $row['total'] }}</td>
@@ -194,6 +189,17 @@
         </tbody>
       </table>
     </div>
+    @if($courierPages > 1)
+    <div class="px-4 py-3 border-t border-gray-100 flex justify-between text-sm">
+      @if($courierPage > 1)
+      <a href="{{ request()->fullUrlWithQuery(['courier_page' => $courierPage - 1]) }}" class="text-brand-600">← Prev</a>
+      @else<span></span>@endif
+      <span class="text-gray-500">Page {{ $courierPage }} / {{ $courierPages }}</span>
+      @if($courierPage < $courierPages)
+      <a href="{{ request()->fullUrlWithQuery(['courier_page' => $courierPage + 1]) }}" class="text-brand-600">Next →</a>
+      @else<span></span>@endif
+    </div>
+    @endif
   </div>
   <div class="card">
     <div class="p-4 border-b border-gray-200 font-semibold flex items-center justify-between">
@@ -213,6 +219,7 @@
       <p class="px-4 py-6 text-gray-500">No activity yet.</p>
       @endforelse
     </div>
+    <div class="px-4 py-3 border-t border-gray-100">{{ $activityLogs->links() }}</div>
   </div>
 </div>
 
@@ -245,5 +252,6 @@
       </tbody>
     </table>
   </div>
+  <div class="px-4 py-3 border-t border-gray-100">{{ $recentOrders->links() }}</div>
 </div>
 @endsection

@@ -6,3 +6,4 @@ import './cms-builder';
 import './theme-preview';
 import './color-mode';
 import './admin-support';
+import './admin-notifications';

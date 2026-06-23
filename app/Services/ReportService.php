@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\ExpenseCategory;
 use App\Enums\OrderStatus;
 use App\Models\Order;
 use App\Models\OrderItem;
@@ -30,7 +31,7 @@ class ReportService
                 Carbon::parse($end ?? $now)->endOfDay(),
             ],
             default => [$now->copy()->startOfMonth(), $now->copy()->endOfMonth()],
-        };
+        ];
     }
 
     public function getProfitLoss(Carbon $start, Carbon $end): array
@@ -38,6 +39,8 @@ class ReportService
         $revenue = $this->revenueBetween($start, $end);
         $cogs = $this->cogsBetween($start, $end);
         $expenseTotal = $this->expenses->sumBetween($start, $end);
+        $courierCost = $this->expenses->sumByCategoryBetween(ExpenseCategory::Courier->value, $start, $end);
+        $otherExpenses = max(0, $expenseTotal - $courierCost);
         $grossProfit = $revenue - $cogs;
         $netProfit = $grossProfit - $expenseTotal;
 
@@ -60,8 +63,13 @@ class ReportService
             'revenue' => round($revenue, 2),
             'cogs' => round($cogs, 2),
             'expenses' => round($expenseTotal, 2),
+            'courier_cost' => round($courierCost, 2),
+            'other_expenses' => round($otherExpenses, 2),
             'gross_profit' => round($grossProfit, 2),
             'net_profit' => round($netProfit, 2),
+            'pending_orders' => Order::query()->where('status', OrderStatus::Pending)->count(),
+            'payment_orders' => $this->countPaidBetween($start, $end),
+            'status_counts' => $this->statusCounts(),
             'chart' => $chart,
             'start' => $start,
             'end' => $end,
@@ -72,8 +80,8 @@ class ReportService
     {
         $items = OrderItem::query()
             ->whereHas('order', function ($query) use ($start, $end) {
-                $query->where('status', OrderStatus::Delivered)
-                    ->whereBetween('delivered_at', [$start, $end]);
+                $query->where('status', OrderStatus::Payment)
+                    ->whereBetween('payment_at', [$start, $end]);
             })
             ->get(['product_id', 'product_variant_id', 'product_name', 'size', 'color', 'quantity']);
 
@@ -122,25 +130,42 @@ class ReportService
     public function revenueBetween(Carbon $start, Carbon $end): float
     {
         return (float) Order::query()
-            ->where('status', OrderStatus::Delivered)
-            ->whereBetween('delivered_at', [$start, $end])
+            ->where('status', OrderStatus::Payment)
+            ->whereBetween('payment_at', [$start, $end])
             ->sum('total');
     }
 
     public function cogsBetween(Carbon $start, Carbon $end): float
     {
         return (float) Order::query()
-            ->where('status', OrderStatus::Delivered)
-            ->whereBetween('delivered_at', [$start, $end])
+            ->where('status', OrderStatus::Payment)
+            ->whereBetween('payment_at', [$start, $end])
             ->sum('cogs');
+    }
+
+    private function countPaidBetween(Carbon $start, Carbon $end): int
+    {
+        return Order::query()
+            ->where('status', OrderStatus::Payment)
+            ->whereBetween('payment_at', [$start, $end])
+            ->count();
+    }
+
+    private function statusCounts(): array
+    {
+        return collect(OrderStatus::cases())
+            ->mapWithKeys(fn (OrderStatus $status) => [
+                $status->value => Order::query()->where('status', $status)->count(),
+            ])
+            ->all();
     }
 
     private function revenueChartBetween(Carbon $start, Carbon $end): Collection
     {
         return Order::query()
-            ->where('status', OrderStatus::Delivered)
-            ->whereBetween('delivered_at', [$start, $end])
-            ->selectRaw("DATE_FORMAT(delivered_at, '%Y-%m') as period, SUM(total) as total")
+            ->where('status', OrderStatus::Payment)
+            ->whereBetween('payment_at', [$start, $end])
+            ->selectRaw("DATE_FORMAT(payment_at, '%Y-%m') as period, SUM(total) as total")
             ->groupBy('period')
             ->orderBy('period')
             ->get()

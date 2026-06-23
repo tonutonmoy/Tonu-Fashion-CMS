@@ -12,6 +12,7 @@ use App\Services\MenuBuilderService;
 use App\Services\StorefrontCacheService;
 use App\Services\ThemeCustomizerService;
 use App\Services\InventoryService;
+use App\Services\AdminNotificationService;
 use App\Services\ThemeService;
 use Illuminate\Cache\Events\CacheHit;
 use Illuminate\Cache\Events\CacheMissed;
@@ -104,8 +105,10 @@ class AppServiceProvider extends ServiceProvider
 
             if (auth()->check() && auth()->user()?->canAdmin('store')) {
                 $inventory = Cache::remember('admin.dashboard.inventory', 120, fn () => app(InventoryService::class)->summary());
+                $notifications = app(AdminNotificationService::class);
                 $payload['lowStockProducts'] = $inventory['low_stock_products'];
-                $payload['lowStockCount'] = $inventory['low_stock_count'];
+                $payload['lowStockCount'] = $notifications->unreadLowStockCount(auth()->user());
+                $payload['lowStockThreshold'] = $inventory['threshold'] ?? app(InventoryService::class)->lowStockThreshold();
             } else {
                 $payload['lowStockProducts'] = [];
                 $payload['lowStockCount'] = 0;

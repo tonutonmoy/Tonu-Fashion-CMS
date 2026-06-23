@@ -51,6 +51,14 @@ class ExpenseRepository implements ExpenseRepositoryInterface
             ->sum('amount');
     }
 
+    public function sumByCategoryBetween(string $category, Carbon $start, Carbon $end): float
+    {
+        return (float) $this->query()
+            ->where('category', $category)
+            ->whereBetween('expense_date', [$start->toDateString(), $end->toDateString()])
+            ->sum('amount');
+    }
+
     public function chartTotalsBetween(Carbon $start, Carbon $end): Collection
     {
         if ($this->usesMongo()) {

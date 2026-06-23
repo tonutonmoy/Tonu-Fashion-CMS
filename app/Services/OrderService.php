@@ -45,6 +45,7 @@ class OrderService
             OrderStatus::CallingStage, OrderStatus::Payment => $data['confirmed_at'] = $order->confirmed_at ?? now(),
             OrderStatus::Courier => $data['shipped_at'] = $order->shipped_at ?? now(),
             OrderStatus::Delivered => $data['delivered_at'] = now(),
+            OrderStatus::Payment => $data['payment_at'] = $order->payment_at ?? now(),
             OrderStatus::Cancelled => $data['cancelled_at'] = now(),
             default => null,
         };

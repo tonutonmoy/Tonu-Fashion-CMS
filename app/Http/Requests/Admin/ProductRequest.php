@@ -42,6 +42,7 @@ class ProductRequest extends FormRequest
             'description' => ['nullable', 'string'],
             'regular_price' => ['required', 'numeric', 'min:0'],
             'sale_price' => ['nullable', 'numeric', 'min:0', 'lt:regular_price'],
+            'purchase_price' => ['required', 'numeric', 'min:0'],
             'stock' => ['required', 'integer', 'min:0'],
             'featured' => ['boolean'],
             'flash_sale' => ['boolean'],

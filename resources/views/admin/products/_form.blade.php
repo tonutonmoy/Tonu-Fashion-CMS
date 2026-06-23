@@ -41,6 +41,11 @@
             <input type="number" name="sale_price" step="0.01" value="{{ old('sale_price', $product?->sale_price) }}" class="input">
         </div>
         <div>
+            <label class="label">Purchase Cost (BDT) *</label>
+            <input type="number" name="purchase_price" step="0.01" min="0" value="{{ old('purchase_price', $product?->purchase_price ?? 0) }}" class="input" required>
+            <p class="text-xs text-gray-500 mt-1">Used for inventory value, COGS, and profit reports.</p>
+        </div>
+        <div>
             <label class="label">Stock *</label>
             <input type="number" name="stock" value="{{ old('stock', $product?->stock ?? 0) }}" class="input" required>
         </div>

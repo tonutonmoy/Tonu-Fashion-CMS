@@ -11,11 +11,17 @@ use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\StockMovement;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class InventoryService
 {
     public const LOW_STOCK_THRESHOLD = 10;
+
+    public function lowStockThreshold(): int
+    {
+        return max(1, (int) setting('low_stock_threshold', self::LOW_STOCK_THRESHOLD));
+    }
 
     public function reserve(string $variantId, string $orderId, int $quantity): void
     {
@@ -40,6 +46,7 @@ class InventoryService
                 'quantity' => $quantity,
                 'note' => 'Reserved for pending order',
             ]);
+            $this->bustInventoryCache();
         } catch (InsufficientStockException $e) {
             throw $e;
         } catch (\Throwable $e) {
@@ -351,6 +358,56 @@ class InventoryService
         }
     }
 
+    public function settleForOrder(Order $order): void
+    {
+        if ($order->inventory_settled || $this->orderHasDeduct((string) $order->id)) {
+            $order->inventory_settled = true;
+
+            return;
+        }
+
+        $this->deductForOrder($order);
+        $order->inventory_settled = true;
+        $this->bustInventoryCache();
+    }
+
+    public function unsettleForOrder(Order $order): void
+    {
+        if (! $order->inventory_settled && ! $this->orderHasDeduct((string) $order->id)) {
+            $this->rollbackForOrder($order);
+            $this->bustInventoryCache();
+
+            return;
+        }
+
+        $this->rollbackForOrder($order);
+        $order->inventory_settled = false;
+        $this->bustInventoryCache();
+    }
+
+    public function productGroupedRows(bool $lowStockOnly = false, ?string $search = null): Collection
+    {
+        return $this->variantRows($lowStockOnly, $search)
+            ->groupBy('product_id')
+            ->map(function (Collection $variants, string $productId) {
+                $first = $variants->first();
+
+                return [
+                    'product_id' => $productId,
+                    'product_name' => $first['product_name'],
+                    'sku' => $first['sku'],
+                    'stock' => $variants->sum('stock'),
+                    'reserved_stock' => $variants->sum('reserved_stock'),
+                    'available_stock' => $variants->sum('available_stock'),
+                    'stock_value' => $variants->sum('stock_value'),
+                    'has_variants' => $variants->contains(fn (array $row) => $row['is_variant']),
+                    'variants' => $variants->values()->all(),
+                ];
+            })
+            ->sortBy('product_name')
+            ->values();
+    }
+
     public function variantRows(bool $lowStockOnly = false, ?string $search = null): Collection
     {
         $query = ProductVariant::query()
@@ -415,7 +472,7 @@ class InventoryService
         $rows = $variants->concat($simpleProducts)->sortBy('product_name')->values();
 
         if ($lowStockOnly) {
-            $rows = $rows->filter(fn (array $row) => $row['available_stock'] < self::LOW_STOCK_THRESHOLD)->values();
+            $rows = $rows->filter(fn (array $row) => $row['available_stock'] < $this->lowStockThreshold())->values();
         }
 
         return $rows;
@@ -451,11 +508,12 @@ class InventoryService
         return [
             'total_stock_value' => round($rows->sum('stock_value'), 2),
             'low_stock_products' => $rows
-                ->filter(fn (array $row) => $row['available_stock'] < self::LOW_STOCK_THRESHOLD)
+                ->filter(fn (array $row) => $row['available_stock'] < $this->lowStockThreshold())
                 ->take(8)
                 ->values()
                 ->all(),
-            'low_stock_count' => $rows->filter(fn (array $row) => $row['available_stock'] < self::LOW_STOCK_THRESHOLD)->count(),
+            'low_stock_count' => $rows->filter(fn (array $row) => $row['available_stock'] < $this->lowStockThreshold())->count(),
+            'threshold' => $this->lowStockThreshold(),
         ];
     }
 
@@ -525,11 +583,31 @@ class InventoryService
         ]);
     }
 
+    private function orderHasDeduct(string $orderId): bool
+    {
+        if ($this->usesMongoMovements()) {
+            return StockMovement::query()
+                ->where('order_id', $orderId)
+                ->where('type', StockMovementType::Deduct->value)
+                ->exists();
+        }
+
+        return DB::table('stock_movements')
+            ->where('order_id', $orderId)
+            ->where('type', StockMovementType::Deduct->value)
+            ->exists();
+    }
+
     private function usesMongoMovements(): bool
     {
         return config('database.default') === 'mongodb'
             && class_exists(StockMovement::class)
             && config('database.connections.mongodb.driver') === 'mongodb';
+    }
+
+    private function bustInventoryCache(): void
+    {
+        Cache::forget('admin.dashboard.inventory');
     }
 
     private function assertPositiveQuantity(int $quantity): void

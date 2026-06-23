@@ -154,8 +154,11 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::resource('brands', AdminBrandController::class)->except(['show']);
             Route::resource('products', AdminProductController::class)->except(['show']);
             Route::get('/inventory', [\App\Http\Controllers\Admin\InventoryController::class, 'index'])->name('inventory.index');
+            Route::post('/inventory/preferences', [\App\Http\Controllers\Admin\InventoryController::class, 'updatePreferences'])->name('inventory.preferences');
             Route::get('/inventory/log', [\App\Http\Controllers\Admin\InventoryController::class, 'log'])->name('inventory.log');
             Route::post('/inventory/adjust', [\App\Http\Controllers\Admin\InventoryController::class, 'adjust'])->name('inventory.adjust');
+            Route::get('/api/notifications', [\App\Http\Controllers\Admin\AdminNotificationController::class, 'index'])->name('notifications.index');
+            Route::post('/api/notifications/mark-read', [\App\Http\Controllers\Admin\AdminNotificationController::class, 'markRead'])->name('notifications.mark-read');
 
             Route::get('/reports/profit-loss', [\App\Http\Controllers\Admin\ReportController::class, 'profitLoss'])->name('reports.profit-loss');
             Route::get('/reports/inventory-details', [\App\Http\Controllers\Admin\ReportController::class, 'inventoryDetails'])->name('reports.inventory-details');
