@@ -23,4 +23,8 @@ return [
     'pages' => 'Pages',
     'settings' => 'Settings',
     'confirm_delete' => 'Are you sure you want to delete this?',
+    'sku' => 'SKU',
+    'sku_hint' => 'Unique product code for inventory (e.g. TSHIRT-001). Leave empty to auto-generate.',
+    'sku_placeholder' => 'Auto-generated if empty',
+    'optional' => 'optional',
 ];

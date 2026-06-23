@@ -11,8 +11,9 @@
             <p class="text-xs text-gray-500 mt-1">URL: /products/<span id="product-slug-preview">{{ old('slug', $product?->slug ?: 'your-product') }}</span></p>
         </div>
         <div>
-            <label class="label">SKU *</label>
-            <input type="text" name="sku" value="{{ old('sku', $product?->sku) }}" class="input" required>
+            <label class="label">{{ __('admin.sku') }} <span class="text-gray-400 font-normal">({{ __('admin.optional') }})</span></label>
+            <input type="text" name="sku" value="{{ old('sku', $product?->sku) }}" class="input" placeholder="{{ __('admin.sku_placeholder') }}" data-sku-input maxlength="100">
+            <p class="text-xs text-gray-500 mt-1">{{ __('admin.sku_hint') }}</p>
         </div>
         <div>
             <label class="label">Category *</label>

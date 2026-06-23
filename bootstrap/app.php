@@ -40,6 +40,16 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        $exceptions->render(function (\Illuminate\Session\TokenMismatchException $e, $request) {
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Session expired. Refresh the page and try again.'], 419);
+            }
+
+            return redirect()->back()
+                ->withInput()
+                ->withErrors(['_token' => 'Session expired. Refresh the page and submit again.']);
+        });
+
         $exceptions->render(function (\Illuminate\Http\Exceptions\PostTooLargeException $e, $request) {
             if (! $request->is('admin/*')) {
                 return null;

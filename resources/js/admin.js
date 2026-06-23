@@ -583,12 +583,81 @@ const initConfirmModal = () => {
     });
 };
 
+const refreshCsrfToken = async () => {
+    const response = await fetch('/csrf-token', {
+        credentials: 'same-origin',
+        headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+    });
+
+    if (!response.ok) {
+        return null;
+    }
+
+    const data = await response.json();
+    const token = data.token;
+
+    if (!token) {
+        return null;
+    }
+
+    document.querySelector('meta[name="csrf-token"]')?.setAttribute('content', token);
+    document.querySelectorAll('input[name="_token"]').forEach((input) => {
+        input.value = token;
+    });
+
+    if (window.axios) {
+        window.axios.defaults.headers.common['X-CSRF-TOKEN'] = token;
+    }
+
+    return token;
+};
+
+const initAdminCsrfGuard = () => {
+    refreshCsrfToken().catch(() => {});
+
+    window.setInterval(() => {
+        refreshCsrfToken().catch(() => {});
+    }, 10 * 60 * 1000);
+
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+            refreshCsrfToken().catch(() => {});
+        }
+    });
+
+    document.addEventListener('submit', async (event) => {
+        const form = event.target;
+        if (!(form instanceof HTMLFormElement)) {
+            return;
+        }
+
+        if (!form.closest('.admin-body') || form.method.toLowerCase() !== 'post') {
+            return;
+        }
+
+        if (form.dataset.confirmed !== 'true' && form.dataset.confirm) {
+            return;
+        }
+
+        if (form.dataset.csrfSubmitting === '1') {
+            form.dataset.csrfSubmitting = '0';
+            return;
+        }
+
+        event.preventDefault();
+        await refreshCsrfToken();
+        form.dataset.csrfSubmitting = '1';
+        form.requestSubmit();
+    }, true);
+};
+
 const initAdmin = () => {
     if (!document.body.classList.contains('admin-body')) {
         return;
     }
 
     initToasts();
+    initAdminCsrfGuard();
     initFormLoading();
     initSlugFields();
     initUploaders();
@@ -598,4 +667,4 @@ const initAdmin = () => {
 
 document.addEventListener('DOMContentLoaded', initAdmin);
 
-window.AdminUI = { showToast, showLoading, hideLoading };
+window.AdminUI = { showToast, showLoading, hideLoading, refreshCsrfToken };

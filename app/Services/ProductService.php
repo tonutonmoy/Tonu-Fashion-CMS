@@ -21,6 +21,7 @@ class ProductService
     {
         return DB::transaction(function () use ($data, $images, $variants, $variantFiles) {
             $data['slug'] = $this->resolveSlug($data['slug'] ?? null, $data['name']);
+            $data['sku'] = $this->resolveSku($data['sku'] ?? null, $data['name'], $data['slug']);
             unset($data['primary_image_id']);
 
             $product = $this->products->create($data);
@@ -108,6 +109,25 @@ class ProductService
         $base = Str::slug($slug ?: $name);
 
         return $this->uniqueSlug($base, $exceptId);
+    }
+
+    private function resolveSku(?string $sku, string $name, string $slug): string
+    {
+        $sku = strtoupper(trim((string) $sku));
+
+        if ($sku !== '') {
+            return $sku;
+        }
+
+        $base = strtoupper(preg_replace('/[^A-Z0-9]+/', '-', Str::slug($slug ?: $name)) ?? 'PROD');
+        $base = trim($base, '-') ?: 'PROD';
+        $base = Str::limit($base, 24, '');
+
+        do {
+            $candidate = $base.'-'.Str::upper(Str::random(4));
+        } while (Product::query()->where('sku', $candidate)->exists());
+
+        return $candidate;
     }
 
     private function uniqueSlug(string $slug, ?int $exceptId = null): string

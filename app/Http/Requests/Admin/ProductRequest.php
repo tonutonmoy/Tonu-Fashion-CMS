@@ -32,7 +32,7 @@ class ProductRequest extends FormRequest
                 new ModelUnique(Product::class, 'slug', $product?->id),
             ],
             'sku' => [
-                'required',
+                'nullable',
                 'string',
                 'max:100',
                 new ModelUnique(Product::class, 'sku', $product?->id),

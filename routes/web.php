@@ -48,6 +48,8 @@ use Illuminate\Support\Facades\Route;
 
 require __DIR__.'/install.php';
 
+Route::get('/csrf-token', fn () => response()->json(['token' => csrf_token()]))->name('csrf-token');
+
 Route::get('/preferences/locale/{locale}', [PreferenceController::class, 'locale'])->name('preferences.locale');
 Route::get('/preferences/color-mode/{mode}', [PreferenceController::class, 'colorMode'])->name('preferences.color-mode');
 
