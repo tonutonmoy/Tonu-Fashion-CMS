@@ -26,10 +26,12 @@ set_env DB_USERNAME "${DB_USER}"
 set_env DB_PASSWORD "${DB_PASS}"
 
 npm run build
+mkdir -p storage/framework/cache/data storage/framework/sessions storage/framework/views storage/logs
 chown -R www-data:www-data public/build storage bootstrap/cache .env
 chmod -R 2775 storage bootstrap/cache
 rm -f bootstrap/cache/config.php bootstrap/cache/routes-v7.php bootstrap/cache/events.php
 sudo -u www-data php artisan optimize:clear
+chown -R www-data:www-data storage bootstrap/cache
 sudo -u www-data php -d memory_limit=512M artisan storefront:warm-cache --no-interaction
 sudo -u www-data php artisan config:cache
 sudo -u www-data php artisan route:cache
