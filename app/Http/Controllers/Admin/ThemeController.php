@@ -104,6 +104,7 @@ class ThemeController extends Controller
             'sections' => $this->publish->getEffectiveHomepageSections(),
             'categories' => Category::query()->orderBy('name')->get(),
             'products' => Product::query()->orderBy('name')->limit(100)->get(),
+            'flashSaleProductCount' => $this->flashSale->countFlashProducts(),
         ]);
     }
 
@@ -159,10 +160,52 @@ class ThemeController extends Controller
 
     public function toggleSection(Request $request, int $id): RedirectResponse
     {
-        $request->validate(['enabled' => 'required|boolean']);
-        $this->homepage->toggleSection($id, $request->boolean('enabled'));
+        $request->validate([
+            'enabled' => 'required|boolean',
+            'clear_flash_products' => 'nullable|boolean',
+        ]);
 
-        return back()->with('success', 'Section draft updated. Click Publish to go live.');
+        $section = $this->publish->getEffectiveHomepageSections()->firstWhere('id', $id);
+
+        if (! $section) {
+            return back()->with('error', 'Section not found.');
+        }
+
+        $enabling = $request->boolean('enabled');
+        $cleared = 0;
+
+        if ($section->section_key === 'flash_sale' && ! $enabling) {
+            $flashCount = $this->flashSale->countFlashProducts();
+
+            if ($flashCount > 0 && ! $request->boolean('clear_flash_products')) {
+                return back()->with(
+                    'error',
+                    "This section has {$flashCount} flash-sale product(s). Confirm disable to remove the offer from those products."
+                );
+            }
+
+            if ($request->boolean('clear_flash_products')) {
+                $cleared = $this->flashSale->removeFlashSaleFromAllProducts();
+                $this->flashSale->resetSectionCache();
+            }
+        }
+
+        $this->homepage->toggleSection($id, $enabling);
+        $this->flashSale->resetSectionCache();
+
+        if ($section->section_key === 'flash_sale' && ! $enabling && $request->boolean('clear_flash_products')) {
+            return back()->with(
+                'success',
+                'Flash Sale section disabled and '.$cleared.' product(s) updated.'
+            );
+        }
+
+        return back()->with(
+            'success',
+            $enabling
+                ? 'Section enabled. Click Publish to make it live on your store.'
+                : 'Section disabled. Click Publish to make it live on your store.'
+        );
     }
 
     public function reorderHomepage(Request $request): RedirectResponse

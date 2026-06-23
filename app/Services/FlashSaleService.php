@@ -17,8 +17,10 @@ class FlashSaleService
     public function __construct(
         private HomepageSectionRepositoryInterface $sections,
         private StorefrontCacheService $cache,
+        private BuilderPublishService $publish,
     ) {}
 
+    /** Published section flag (storefront). */
     public function isSectionEnabled(): bool
     {
         if ($this->sectionEnabled === null) {
@@ -27,6 +29,23 @@ class FlashSaleService
         }
 
         return $this->sectionEnabled;
+    }
+
+    /** Draft + published section flag (admin builder / product form). */
+    public function isSectionEnabledInBuilder(): bool
+    {
+        $section = $this->publish->getEffectiveHomepageSections()
+            ->firstWhere('section_key', HomepageSectionKey::FlashSale->value);
+
+        return (bool) ($section?->enabled ?? false);
+    }
+
+    public function builderSettings(): array
+    {
+        $section = $this->publish->getEffectiveHomepageSections()
+            ->firstWhere('section_key', HomepageSectionKey::FlashSale->value);
+
+        return $section?->settings ?? [];
     }
 
     public function getSettings(): array
@@ -88,12 +107,13 @@ class FlashSaleService
 
     public function applyProductPricing(array $data): array
     {
-        $wantsFlash = (bool) ($data['flash_sale'] ?? $data['is_flash_sale'] ?? false);
+        $sectionOn = $this->isSectionEnabledInBuilder();
+        $wantsFlash = $sectionOn && (bool) ($data['flash_sale'] ?? $data['is_flash_sale'] ?? false);
         unset($data['flash_sale']);
 
         $data['is_flash_sale'] = $wantsFlash;
 
-        if ($this->isActive() && $wantsFlash && isset($data['regular_price'])) {
+        if ($sectionOn && $wantsFlash && isset($data['regular_price'])) {
             $data['sale_price'] = $this->discountedPrice((float) $data['regular_price']);
         }
 
@@ -102,11 +122,41 @@ class FlashSaleService
             ? (float) $data['sale_price']
             : null;
 
-        $data['effective_price'] = ($this->isActive() && $wantsFlash)
+        $data['effective_price'] = ($sectionOn && $wantsFlash)
             ? $this->discountedPrice($regular)
             : ($sale ?? $regular);
 
         return $data;
+    }
+
+    public function countFlashProducts(): int
+    {
+        return Product::query()->where('is_flash_sale', true)->count();
+    }
+
+    /** Remove flash-sale flag and restore storefront prices for all affected products. */
+    public function removeFlashSaleFromAllProducts(): int
+    {
+        $count = 0;
+
+        Product::query()
+            ->where('is_flash_sale', true)
+            ->each(function (Product $product) use (&$count) {
+                $product->is_flash_sale = false;
+                $product->effective_price = (float) ($product->sale_price ?? $product->regular_price);
+                $product->saveQuietly();
+                $count++;
+            });
+
+        $this->cache->forgetHomepage();
+
+        return $count;
+    }
+
+    public function resetSectionCache(): void
+    {
+        $this->settings = null;
+        $this->sectionEnabled = null;
     }
 
     public function getProducts(int $limit = 8): Collection

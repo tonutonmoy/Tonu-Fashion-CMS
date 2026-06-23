@@ -41,8 +41,8 @@ class ProductController extends Controller
             'brands' => $this->brands->getActive(),
             'sizes' => $this->variantCatalog->sizes(),
             'colors' => $this->variantCatalog->colors(),
-            'flashSaleActive' => $this->flashSale->isActive(),
-            'flashDiscount' => $this->flashSale->discountPercent(),
+            'flashSaleActive' => $this->flashSale->isSectionEnabledInBuilder(),
+            'flashDiscount' => (int) ($this->flashSale->builderSettings()['discount'] ?? 20),
         ]);
     }
 
@@ -73,8 +73,8 @@ class ProductController extends Controller
             'brands' => $this->brands->getActive(),
             'sizes' => $this->variantCatalog->sizes($product),
             'colors' => $this->variantCatalog->colors($product),
-            'flashSaleActive' => $this->flashSale->isActive(),
-            'flashDiscount' => $this->flashSale->discountPercent(),
+            'flashSaleActive' => $this->flashSale->isSectionEnabledInBuilder(),
+            'flashDiscount' => (int) ($this->flashSale->builderSettings()['discount'] ?? 20),
         ]);
     }
 

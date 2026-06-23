@@ -9,6 +9,7 @@ use App\Models\ProductImage;
 use App\Models\ProductVariant;
 use App\Rules\ModelExists;
 use App\Rules\ModelUnique;
+use App\Services\FlashSaleService;
 use Illuminate\Foundation\Http\FormRequest;
 
 class ProductRequest extends FormRequest
@@ -72,9 +73,11 @@ class ProductRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
+        $flashSectionOn = app(FlashSaleService::class)->isSectionEnabledInBuilder();
+
         $this->merge([
             'featured' => $this->boolean('featured'),
-            'flash_sale' => $this->boolean('flash_sale'),
+            'flash_sale' => $flashSectionOn ? $this->boolean('flash_sale') : false,
             'free_delivery' => $this->boolean('free_delivery'),
         ]);
     }
