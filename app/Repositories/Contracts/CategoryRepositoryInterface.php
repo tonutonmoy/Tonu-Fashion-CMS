@@ -12,5 +12,5 @@ interface CategoryRepositoryInterface extends BaseRepositoryInterface
 
     public function findBySlug(string $slug): ?Category;
 
-    public function paginateAdmin(int $perPage = 15): LengthAwarePaginator;
+    public function paginateAdmin(array $filters = [], ?int $perPage = null): LengthAwarePaginator;
 }

@@ -85,7 +85,7 @@
                 <label class="label">Order Status</label>
                 <select name="status" class="input w-full" required>
                     @foreach($statuses as $status)
-                    <option value="{{ $status->value }}" @selected(old('status', 'confirmed') === $status->value)>{{ $status->label() }}</option>
+                    <option value="{{ $status->value }}" @selected(old('status', 'pending') === $status->value)>{{ $status->label() }}</option>
                     @endforeach
                 </select>
             </div>

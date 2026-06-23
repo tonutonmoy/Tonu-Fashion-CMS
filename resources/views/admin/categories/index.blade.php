@@ -3,15 +3,28 @@
 @section('title', 'Categories')
 
 @section('content')
-<div class="flex justify-between mb-6">
+<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
     <h2 class="text-xl font-semibold">Categories</h2>
     <a href="{{ route('admin.categories.create') }}" class="btn-primary">Add Category</a>
 </div>
+
+<form method="GET" class="card p-4 mb-4 flex flex-col sm:flex-row gap-3">
+    <input type="text" name="search" value="{{ request('search') }}" class="input flex-1" placeholder="Search name…">
+    <select name="status" class="input sm:w-36">
+        <option value="">All statuses</option>
+        @foreach(\App\Enums\RecordStatus::cases() as $status)
+        <option value="{{ $status->value }}" @selected(request('status') === $status->value)>{{ $status->label() }}</option>
+        @endforeach
+    </select>
+    <button type="submit" class="btn-primary">Filter</button>
+    <a href="{{ route('admin.categories.index') }}" class="btn-secondary">Reset</a>
+</form>
+
 <div class="card overflow-hidden">
     <table class="w-full text-sm">
         <thead class="bg-gray-50"><tr><th class="px-4 py-3 text-left">Name</th><th class="px-4 py-3 text-left">Products</th><th class="px-4 py-3 text-left">Status</th><th class="px-4 py-3 text-right">Actions</th></tr></thead>
         <tbody class="divide-y">
-            @foreach($categories as $category)
+            @forelse($categories as $category)
             <tr>
                 <td class="px-4 py-3 font-medium">{{ $category->name }}</td>
                 <td class="px-4 py-3">{{ $category->products_count }}</td>
@@ -23,7 +36,9 @@
                     </x-admin.action-group>
                 </td>
             </tr>
-            @endforeach
+            @empty
+            <tr><td colspan="4" class="px-4 py-8 text-center text-gray-500">No categories found.</td></tr>
+            @endforelse
         </tbody>
     </table>
 </div>

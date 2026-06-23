@@ -12,5 +12,5 @@ interface BrandRepositoryInterface extends BaseRepositoryInterface
 
     public function findBySlug(string $slug): ?Brand;
 
-    public function paginateAdmin(int $perPage = 15): LengthAwarePaginator;
+    public function paginateAdmin(array $filters = [], ?int $perPage = null): LengthAwarePaginator;
 }

@@ -8,6 +8,7 @@ use App\Models\Brand;
 use App\Repositories\Contracts\BrandRepositoryInterface;
 use App\Services\ImageService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 
@@ -18,10 +19,10 @@ class BrandController extends Controller
         private ImageService $images
     ) {}
 
-    public function index(): View
+    public function index(Request $request): View
     {
         return view('admin.brands.index', [
-            'brands' => $this->brands->paginateAdmin(config('fashion.pagination.admin')),
+            'brands' => $this->brands->paginateAdmin($request->all()),
         ]);
     }
 

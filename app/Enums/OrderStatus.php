@@ -5,13 +5,10 @@ namespace App\Enums;
 enum OrderStatus: string
 {
     case Pending = 'pending';
-    case Confirmed = 'confirmed';
-    case Processing = 'processing';
-    case ParcelCreated = 'parcel_created';
-    case Picked = 'picked';
-    case InTransit = 'in_transit';
-    case Shipped = 'shipped';
+    case CallingStage = 'calling_stage';
+    case Courier = 'courier';
     case Delivered = 'delivered';
+    case Payment = 'payment';
     case Cancelled = 'cancelled';
     case Returned = 'returned';
 
@@ -19,15 +16,12 @@ enum OrderStatus: string
     {
         return match ($this) {
             self::Pending => 'Pending',
-            self::Confirmed => 'Confirmed',
-            self::Processing => 'Processing',
-            self::ParcelCreated => 'Parcel Created',
-            self::Picked => 'Picked',
-            self::InTransit => 'In Transit',
-            self::Shipped => 'Shipped',
+            self::CallingStage => 'Calling Stage',
+            self::Courier => 'Courier',
             self::Delivered => 'Delivered',
-            self::Cancelled => 'Cancelled',
-            self::Returned => 'Returned',
+            self::Payment => 'Payment',
+            self::Cancelled => 'Cancel',
+            self::Returned => 'Return',
         };
     }
 
@@ -35,13 +29,10 @@ enum OrderStatus: string
     {
         return match ($this) {
             self::Pending => 'yellow',
-            self::Confirmed => 'blue',
-            self::Processing => 'indigo',
-            self::ParcelCreated => 'cyan',
-            self::Picked => 'violet',
-            self::InTransit => 'purple',
-            self::Shipped => 'purple',
+            self::CallingStage => 'blue',
+            self::Courier => 'cyan',
             self::Delivered => 'green',
+            self::Payment => 'indigo',
             self::Cancelled => 'red',
             self::Returned => 'orange',
         };
@@ -54,19 +45,38 @@ enum OrderStatus: string
 
     public function canTransitionTo(self $status): bool
     {
-        if ($this === $status || $this->isTerminal()) {
+        if ($this === $status) {
             return false;
         }
 
-        return match ($this) {
-            self::Pending => in_array($status, [self::Confirmed, self::Cancelled], true),
-            self::Confirmed => in_array($status, [self::Processing, self::ParcelCreated, self::Cancelled], true),
-            self::Processing => in_array($status, [self::ParcelCreated, self::Picked, self::InTransit, self::Shipped, self::Cancelled], true),
-            self::ParcelCreated => in_array($status, [self::Picked, self::InTransit, self::Shipped, self::Cancelled], true),
-            self::Picked => in_array($status, [self::InTransit, self::Shipped, self::Delivered, self::Cancelled], true),
-            self::InTransit => in_array($status, [self::Shipped, self::Delivered, self::Returned, self::Cancelled], true),
-            self::Shipped => in_array($status, [self::Delivered, self::Returned], true),
-            default => false,
-        };
+        if ($this->isTerminal()) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /** @return array<string, self> */
+    public static function legacyMap(): array
+    {
+        return [
+            'confirmed' => self::CallingStage,
+            'processing' => self::CallingStage,
+            'parcel_created' => self::Courier,
+            'picked' => self::Courier,
+            'in_transit' => self::Courier,
+            'shipped' => self::Courier,
+        ];
+    }
+
+    public static function tryFromLegacy(string $value): ?self
+    {
+        $resolved = self::tryFrom($value);
+
+        if ($resolved !== null) {
+            return $resolved;
+        }
+
+        return self::legacyMap()[$value] ?? null;
     }
 }

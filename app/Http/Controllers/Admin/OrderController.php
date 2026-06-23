@@ -14,6 +14,8 @@ use App\Models\User;
 use App\Repositories\Contracts\OrderRepositoryInterface;
 use App\Repositories\Contracts\UserRepositoryInterface;
 use App\Services\AdminOrderService;
+use App\Services\CourierSettingsService;
+use App\Services\CourierManager;
 use App\Services\OrderService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -26,12 +28,19 @@ class OrderController extends Controller
         private OrderService $orderService,
         private AdminOrderService $adminOrders,
         private UserRepositoryInterface $users,
+        private CourierSettingsService $courierSettings,
+        private CourierManager $courierManager,
     ) {}
 
     public function index(Request $request): View
     {
+        $filters = $request->all();
+        if (! $request->has('scope')) {
+            $filters['scope'] = 'today';
+        }
+
         return view('admin.orders.index', [
-            'orders' => $this->orders->paginateAdmin($request->all()),
+            'orders' => $this->orders->paginateAdmin($filters),
             'statuses' => OrderStatus::cases(),
         ]);
     }
@@ -72,6 +81,7 @@ class OrderController extends Controller
             'order' => $order,
             'statuses' => OrderStatus::cases(),
             'customerAccount' => $order->user_id ? $this->users->find($order->user_id) : null,
+            'activeCouriers' => $this->courierSettings->activeConfiguredCouriers($this->courierManager),
         ]);
     }
 

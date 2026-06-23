@@ -12,6 +12,7 @@ import './marketing';
 import './color-mode';
 import './mobile';
 import './cart';
+import './hero-slider';
 import { initSupportChat } from './support-chat';
 import { onPageLoad } from './page-load';
 
@@ -38,9 +39,6 @@ function bootStorefront() {
     }
     if (document.getElementById('product-add-form')) {
         import('./product-variants');
-    }
-    if (document.querySelector('[data-hero-slider]')) {
-        import('./hero-slider');
     }
     if (document.querySelector('[data-flash-countdown]')) {
         import('./flash-sale');

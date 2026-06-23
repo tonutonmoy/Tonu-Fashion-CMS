@@ -31,12 +31,9 @@ class DashboardController extends Controller
                 'revenue' => Order::query()
                     ->whereIn('status', [
                         OrderStatus::Delivered,
-                        OrderStatus::Shipped,
-                        OrderStatus::InTransit,
-                        OrderStatus::Processing,
-                        OrderStatus::Confirmed,
-                        OrderStatus::ParcelCreated,
-                        OrderStatus::Picked,
+                        OrderStatus::Courier,
+                        OrderStatus::Payment,
+                        OrderStatus::CallingStage,
                     ])
                     ->sum('total'),
             ];

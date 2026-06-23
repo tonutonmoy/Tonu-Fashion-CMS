@@ -3,10 +3,29 @@
 @section('title', 'Products')
 
 @section('content')
-<div class="flex justify-between items-center mb-6">
+<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
     <h2 class="text-xl font-semibold">Products</h2>
     <a href="{{ route('admin.products.create') }}" class="btn-primary">Add Product</a>
 </div>
+
+<form method="GET" class="card p-4 mb-4 flex flex-col sm:flex-row gap-3 flex-wrap">
+    <input type="text" name="search" value="{{ request('search') }}" class="input flex-1 min-w-[12rem]" placeholder="Search name or SKU…">
+    <select name="category_id" class="input sm:w-44">
+        <option value="">All categories</option>
+        @foreach($categories as $category)
+        <option value="{{ $category->id }}" @selected((string) request('category_id') === (string) $category->id)>{{ $category->name }}</option>
+        @endforeach
+    </select>
+    <select name="status" class="input sm:w-36">
+        <option value="">All statuses</option>
+        @foreach(\App\Enums\RecordStatus::cases() as $status)
+        <option value="{{ $status->value }}" @selected(request('status') === $status->value)>{{ $status->label() }}</option>
+        @endforeach
+    </select>
+    <button type="submit" class="btn-primary">Filter</button>
+    <a href="{{ route('admin.products.index') }}" class="btn-secondary">Reset</a>
+</form>
+
 <div class="card overflow-hidden">
     <table class="w-full text-sm">
         <thead class="bg-gray-50">
@@ -20,7 +39,7 @@
             </tr>
         </thead>
         <tbody class="divide-y divide-gray-100">
-            @foreach($products as $product)
+            @forelse($products as $product)
             <tr>
                 <td class="px-4 py-3 font-medium">{{ $product->name }}</td>
                 <td class="px-4 py-3 text-gray-500">{{ $product->sku }}</td>
@@ -34,7 +53,9 @@
                     </x-admin.action-group>
                 </td>
             </tr>
-            @endforeach
+            @empty
+            <tr><td colspan="6" class="px-4 py-8 text-center text-gray-500">No products found.</td></tr>
+            @endforelse
         </tbody>
     </table>
 </div>

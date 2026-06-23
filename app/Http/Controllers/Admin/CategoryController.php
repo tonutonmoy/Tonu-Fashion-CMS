@@ -8,6 +8,7 @@ use App\Models\Category;
 use App\Repositories\Contracts\CategoryRepositoryInterface;
 use App\Services\ImageService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 
@@ -18,10 +19,10 @@ class CategoryController extends Controller
         private ImageService $images
     ) {}
 
-    public function index(): View
+    public function index(Request $request): View
     {
         return view('admin.categories.index', [
-            'categories' => $this->categories->paginateAdmin(config('fashion.pagination.admin')),
+            'categories' => $this->categories->paginateAdmin($request->all()),
         ]);
     }
 

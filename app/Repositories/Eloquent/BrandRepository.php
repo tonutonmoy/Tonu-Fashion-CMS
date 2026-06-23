@@ -28,15 +28,24 @@ class BrandRepository extends BaseRepository implements BrandRepositoryInterface
         return $this->model->newQuery()->where('slug', $slug)->first();
     }
 
-    public function paginateAdmin(?int $perPage = null): LengthAwarePaginator
+    public function paginateAdmin(array $filters = [], ?int $perPage = null): LengthAwarePaginator
     {
         $perPage ??= admin_per_page();
 
-        $paginator = $this->model->newQuery()
-            ->withCount('products')
-            ->orderByDesc('id')
-            ->paginate($perPage);
+        $query = $this->model->newQuery()->withCount('products');
 
-        return $paginator;
+        if (! empty($filters['search'])) {
+            $search = $filters['search'];
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('slug', 'like', "%{$search}%");
+            });
+        }
+
+        if (! empty($filters['status'])) {
+            $query->where('status', $filters['status']);
+        }
+
+        return $query->orderByDesc('id')->paginate($perPage)->withQueryString();
     }
 }

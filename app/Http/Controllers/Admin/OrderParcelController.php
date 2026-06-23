@@ -21,6 +21,11 @@ class OrderParcelController extends Controller
     public function createParcel(Request $request, string $orderNumber): RedirectResponse
     {
         $order = $this->orders->findByOrderNumber($orderNumber);
+
+        $request->validate([
+            'courier' => ['nullable', 'string', 'in:'.implode(',', array_column(\App\Enums\CourierType::cases(), 'value'))],
+        ]);
+
         $courier = $request->input('courier')
             ? CourierType::from($request->input('courier'))
             : null;
@@ -31,7 +36,7 @@ class OrderParcelController extends Controller
             return back()->with('error', $e->getMessage());
         }
 
-        return back()->with('success', 'Courier parcel created successfully.');
+        return back()->with('success', 'Courier parcel created. Order status updated to Courier.');
     }
 
     public function syncParcel(string $orderNumber): RedirectResponse

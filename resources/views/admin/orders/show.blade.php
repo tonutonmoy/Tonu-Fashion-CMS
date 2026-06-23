@@ -75,8 +75,21 @@
         <div class="card p-6 space-y-3">
             <h2 class="font-semibold">Quick actions</h2>
             @if(!$parcel)
-            <form action="{{ route('admin.orders.parcel.create', $order) }}" method="POST" data-loading-message="Creating parcel…">@csrf
+            <form action="{{ route('admin.orders.parcel.create', $order) }}" method="POST" class="space-y-3" data-loading-message="Creating parcel…">
+                @csrf
+                @if(count($activeCouriers) > 0)
+                <div>
+                    <label class="label text-sm">Courier provider</label>
+                    <select name="courier" class="input" required>
+                        @foreach($activeCouriers as $courier)
+                        <option value="{{ $courier['type']->value }}" @selected($loop->first)>{{ $courier['label'] }}</option>
+                        @endforeach
+                    </select>
+                </div>
                 <button type="submit" class="btn-primary w-full">📦 Create courier parcel</button>
+                @else
+                <p class="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-3">No active courier configured. Enable one in <a href="{{ route('admin.courier.index') }}" class="underline">Courier settings</a>.</p>
+                @endif
             </form>
             @else
             <form action="{{ route('admin.orders.parcel.sync', $order) }}" method="POST" data-loading-message="Syncing parcel…">@csrf
@@ -110,9 +123,7 @@
                 <h2 class="font-semibold">Change status</h2>
                 <select name="status" class="input">
                     @foreach($statuses as $status)
-                        @if($order->status === $status || $order->status->canTransitionTo($status))
-                            <option value="{{ $status->value }}" @selected($order->status === $status)>{{ $status->label() }}</option>
-                        @endif
+                        <option value="{{ $status->value }}" @selected($order->status === $status)>{{ $status->label() }}</option>
                     @endforeach
                 </select>
                 <button type="submit" class="btn-primary w-full">Update status</button>

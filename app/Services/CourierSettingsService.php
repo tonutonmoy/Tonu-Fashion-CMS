@@ -72,6 +72,19 @@ class CourierSettingsService
             ->all();
     }
 
+    /** @return array<int, array{type: CourierType, label: string}> */
+    public function activeConfiguredCouriers(CourierManager $manager): array
+    {
+        return collect($this->enabledCouriers())
+            ->filter(fn (CourierType $type) => $manager->gateway($type)->isConfigured())
+            ->map(fn (CourierType $type) => [
+                'type' => $type,
+                'label' => $type->label(),
+            ])
+            ->values()
+            ->all();
+    }
+
     private function courierFromStorage(string $key): array
     {
         return [

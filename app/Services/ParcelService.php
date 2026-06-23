@@ -25,11 +25,6 @@ class ParcelService
             throw new \RuntimeException('A courier parcel already exists for this order.');
         }
 
-        if ($order->status === OrderStatus::Pending) {
-            $this->orders->forceStatus($order->id, OrderStatus::Confirmed, notify: false);
-            $order->refresh();
-        }
-
         if ($order->status->isTerminal()) {
             throw new \RuntimeException('Cannot create a parcel for a '.$order->status->label().' order.');
         }
@@ -73,7 +68,7 @@ class ParcelService
                 'raw' => $result->raw,
             ]);
 
-            $this->orders->forceStatus($order->id, OrderStatus::ParcelCreated, notify: false);
+            $this->orders->forceStatus($order->id, OrderStatus::Courier, notify: false);
 
             $this->activity->log('courier.parcel_created', "Parcel created via {$courier->label()}", $order, [
                 'tracking_code' => $parcel->tracking_code,
@@ -188,19 +183,18 @@ class ParcelService
     {
         $mapped = $this->mapCourierStatusToOrder($courierStatus);
 
-        if (! $mapped || ! $order->status->canTransitionTo($mapped)) {
+        if (! $mapped || $order->status === $mapped) {
             return;
         }
 
-        $previous = $order->status;
-        $this->orders->forceStatus($order->id, $mapped, notify: $notify && $this->shouldNotify($previous, $mapped));
+        $this->orders->forceStatus($order->id, $mapped, notify: $notify && $this->shouldNotify($order->status, $mapped));
     }
 
     private function shouldNotify(OrderStatus $from, OrderStatus $to): bool
     {
         return match ($to) {
-            OrderStatus::InTransit, OrderStatus::Shipped => ! in_array($from, [OrderStatus::InTransit, OrderStatus::Shipped], true),
             OrderStatus::Delivered, OrderStatus::Returned => true,
+            OrderStatus::Courier => ! in_array($from, [OrderStatus::Courier], true),
             default => false,
         };
     }
@@ -212,10 +206,16 @@ class ParcelService
         return match (true) {
             str_contains($status, 'return') => OrderStatus::Returned,
             str_contains($status, 'deliver') && ! str_contains($status, 'undeliver') => OrderStatus::Delivered,
-            str_contains($status, 'pick') => OrderStatus::Picked,
-            str_contains($status, 'transit') || str_contains($status, 'hub') || str_contains($status, 'on the way') => OrderStatus::InTransit,
-            str_contains($status, 'ship') || str_contains($status, 'dispatch') || str_contains($status, 'out for delivery') => OrderStatus::Shipped,
-            str_contains($status, 'created') || str_contains($status, 'pending') || str_contains($status, 'placed') => OrderStatus::ParcelCreated,
+            str_contains($status, 'pick'),
+            str_contains($status, 'transit'),
+            str_contains($status, 'hub'),
+            str_contains($status, 'on the way'),
+            str_contains($status, 'ship'),
+            str_contains($status, 'dispatch'),
+            str_contains($status, 'out for delivery'),
+            str_contains($status, 'created'),
+            str_contains($status, 'pending'),
+            str_contains($status, 'placed') => OrderStatus::Courier,
             default => null,
         };
     }

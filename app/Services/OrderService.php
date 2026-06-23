@@ -22,11 +22,7 @@ class OrderService
             return;
         }
 
-        if (! $order->status->canTransitionTo($status)) {
-            throw new \InvalidArgumentException("Cannot transition from {$order->status->value} to {$status->value}");
-        }
-
-        $this->applyStatus($orderId, $status);
+        $this->forceStatus($orderId, $status);
     }
 
     public function forceStatus(int $orderId, OrderStatus $status, bool $notify = true): void
@@ -46,15 +42,12 @@ class OrderService
         $data = ['status' => $status];
 
         match ($status) {
-            OrderStatus::Confirmed => $data['confirmed_at'] = $order->confirmed_at ?? now(),
+            OrderStatus::CallingStage, OrderStatus::Payment => $data['confirmed_at'] = $order->confirmed_at ?? now(),
+            OrderStatus::Courier => $data['shipped_at'] = $order->shipped_at ?? now(),
             OrderStatus::Delivered => $data['delivered_at'] = now(),
             OrderStatus::Cancelled => $data['cancelled_at'] = now(),
             default => null,
         };
-
-        if (in_array($status, [OrderStatus::Shipped, OrderStatus::InTransit], true) && ! $order->shipped_at) {
-            $data['shipped_at'] = now();
-        }
 
         $this->orders->update($orderId, $data);
 
@@ -63,14 +56,14 @@ class OrderService
         }
 
         match ($status) {
-            OrderStatus::Confirmed => SendOrderSmsJob::dispatch($orderId, 'confirmed'),
-            OrderStatus::Shipped, OrderStatus::InTransit => SendOrderSmsJob::dispatch($orderId, 'shipped'),
+            OrderStatus::CallingStage => SendOrderSmsJob::dispatch($orderId, 'confirmed'),
+            OrderStatus::Courier => SendOrderSmsJob::dispatch($orderId, 'parcel_created'),
             OrderStatus::Delivered => SendOrderSmsJob::dispatch($orderId, 'delivered'),
             OrderStatus::Returned => SendOrderSmsJob::dispatch($orderId, 'returned'),
             default => null,
         };
 
-        if ($status === OrderStatus::Confirmed && $this->courierSettings->isAutoParcelEnabled()) {
+        if ($status === OrderStatus::CallingStage && $this->courierSettings->isAutoParcelEnabled()) {
             CreateCourierParcelJob::dispatch($orderId);
         }
     }

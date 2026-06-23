@@ -96,7 +96,7 @@ class PaymentService
             ]);
 
             if ($order->status === OrderStatus::Pending) {
-                $this->orderService->forceStatus($order->id, OrderStatus::Confirmed);
+                $this->orderService->forceStatus($order->id, OrderStatus::Payment);
             }
 
             $order = $order->fresh()->load('items');

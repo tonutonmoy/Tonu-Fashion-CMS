@@ -75,7 +75,7 @@ class AdminOrderService
 
             $total = max(0, $subtotal - $discount + $shipping);
             $paymentMethod = PaymentMethod::from($data['payment_method'] ?? PaymentMethod::CashOnDelivery->value);
-            $status = OrderStatus::from($data['status'] ?? OrderStatus::Confirmed->value);
+            $status = OrderStatus::from($data['status'] ?? OrderStatus::Pending->value);
 
             $order = $this->orders->create([
                 'order_number' => $this->generateOrderNumber(),
@@ -98,7 +98,7 @@ class AdminOrderService
                 'shipping_area' => $data['shipping_area'] ?? null,
                 'shipping_address' => $data['shipping_address'],
                 'order_note' => $data['order_note'] ?? null,
-                'confirmed_at' => in_array($status, [OrderStatus::Confirmed, OrderStatus::Processing, OrderStatus::Shipped, OrderStatus::InTransit, OrderStatus::Delivered], true)
+                'confirmed_at' => in_array($status, [OrderStatus::CallingStage, OrderStatus::Courier, OrderStatus::Payment, OrderStatus::Delivered], true)
                     ? now()
                     : null,
             ]);

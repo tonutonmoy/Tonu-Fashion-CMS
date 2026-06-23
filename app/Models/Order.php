@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\OrderStatusCast;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
@@ -46,7 +47,7 @@ class Order extends BaseModel
     protected function casts(): array
     {
         return [
-            'status' => OrderStatus::class,
+            'status' => OrderStatusCast::class,
             'payment_method' => PaymentMethod::class,
             'payment_status' => PaymentStatus::class,
             'subtotal' => 'decimal:2',
