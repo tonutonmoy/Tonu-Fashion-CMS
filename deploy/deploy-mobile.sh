@@ -43,6 +43,12 @@ else
 fi
 
 set_env IMAGE_DRIVER auto
+set_env IMAGEBB_API_URL "https://api.imgbb.com/1/upload"
+if [ -n "${IMAGEBB_API_KEY:-}" ]; then
+  set_env IMAGEBB_API_KEY "${IMAGEBB_API_KEY}"
+elif ! grep -q "^IMAGEBB_API_KEY=." .env 2>/dev/null; then
+  echo "WARN: IMAGEBB_API_KEY not set on server .env"
+fi
 
 npm run build
 sudo -u www-data php artisan migrate --force --no-interaction
