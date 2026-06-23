@@ -26,6 +26,7 @@ set_env DB_USERNAME "${DB_USER}"
 set_env DB_PASSWORD "${DB_PASS}"
 
 npm run build
+sudo -u www-data php artisan migrate --force --no-interaction
 mkdir -p storage/framework/cache/data storage/framework/sessions storage/framework/views storage/logs
 chown -R www-data:www-data public/build storage bootstrap/cache .env
 chmod -R 2775 storage bootstrap/cache
