@@ -10,6 +10,7 @@ use App\Http\Requests\Admin\ThemeCustomizerRequest;
 use App\Http\Requests\Admin\ThemeSeoRequest;
 use App\Models\Category;
 use App\Models\Product;
+use App\Enums\RecordStatus;
 use App\Repositories\Contracts\HomepageSectionRepositoryInterface;
 use App\Services\BuilderPublishService;
 use App\Services\FooterBuilderService;
@@ -38,8 +39,23 @@ class ThemeController extends Controller
 
     public function customizer(): View
     {
+        $previewProduct = Product::query()
+            ->where('status', RecordStatus::Active)
+            ->orderByDesc('id')
+            ->value('slug');
+
+        $previewPages = [
+            ['label' => 'Home', 'path' => '/'],
+            ['label' => 'Shop', 'path' => '/shop'],
+        ];
+
+        if ($previewProduct) {
+            $previewPages[] = ['label' => 'Product', 'path' => '/products/'.$previewProduct];
+        }
+
         return view('admin.theme.customizer', [
             'settings' => $this->customizer->get(),
+            'previewPages' => $previewPages,
             'themes' => $this->customizer->availableThemes(),
             'themeDefaults' => collect($this->customizer->availableThemes())
                 ->mapWithKeys(fn ($theme, $slug) => [$slug => $theme['defaults'] ?? []])

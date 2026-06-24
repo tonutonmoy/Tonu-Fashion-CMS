@@ -5,6 +5,7 @@
     'openUrl' => null,
     'previewLabel' => null,
     'previewSection' => null,
+    'previewPages' => null,
 ])
 
 @php
@@ -34,9 +35,22 @@
 
         @if($live && $s)
             <div class="flex h-1.5 rounded-full overflow-hidden mb-2" data-theme-preview>
-                <span class="flex-1" data-swatch-primary style="background: {{ $s->primary_color }}"></span>
-                <span class="flex-1" data-swatch-secondary style="background: {{ $s->secondary_color }}"></span>
-                <span class="flex-1" data-swatch-accent style="background: {{ $s->accent_color ?? '#f59e0b' }}"></span>
+                <span class="flex-1" data-swatch-primary style="background: {{ $s->primary_color }}" title="Primary — buttons, links, prices"></span>
+                <span class="flex-1" data-swatch-secondary style="background: {{ $s->secondary_color }}" title="Secondary — footer"></span>
+                <span class="flex-1" data-swatch-accent style="background: {{ $s->accent_color ?? '#f59e0b' }}" title="Accent — stars, highlights"></span>
+            </div>
+        @endif
+
+        @if($live && !empty($previewPages))
+            <div class="flex flex-wrap gap-1 mb-2" data-preview-page-tabs>
+                @foreach($previewPages as $index => $page)
+                <button
+                    type="button"
+                    class="builder-preview-page {{ $index === 0 ? 'is-active' : '' }}"
+                    data-preview-page="{{ $page['path'] }}"
+                    title="Preview {{ $page['label'] }} page with your colors"
+                >{{ $page['label'] }}</button>
+                @endforeach
             </div>
         @endif
 
@@ -60,6 +74,13 @@
         <h3 class="font-semibold text-sm">Live Preview</h3>
         <button type="button" class="text-xs text-brand-600" data-preview-refresh>Refresh</button>
     </div>
+    @if($live && !empty($previewPages))
+    <div class="flex flex-wrap gap-1 mb-2" data-preview-page-tabs>
+        @foreach($previewPages as $index => $page)
+        <button type="button" class="builder-preview-page {{ $index === 0 ? 'is-active' : '' }}" data-preview-page="{{ $page['path'] }}">{{ $page['label'] }}</button>
+        @endforeach
+    </div>
+    @endif
     <div class="builder-preview-frame is-mobile" data-preview-frame>
         <iframe src="{{ $previewUrl }}" data-theme-preview-iframe data-preview-src="{{ strtok($previewUrl, '#') }}" @if($previewSection) data-preview-hash="#{{ ltrim($previewSection, '#') }}" @endif title="Live preview" loading="eager"></iframe>
     </div>

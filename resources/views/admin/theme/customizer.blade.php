@@ -25,7 +25,7 @@
             onclick="return confirm('Restore everything to Fashion Modern defaults? Logo will be removed.')">Restore Defaults</button>
 </div>
 
-<x-admin.builder-layout :live="true" :settings="$settings" :preview-url="$previewUrl" preview-label="Live theme preview">
+<x-admin.builder-layout :live="true" :settings="$settings" :preview-url="$previewUrl" :preview-pages="$previewPages" preview-label="Full storefront preview">
     @if($errors->any())
     <div class="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
         <p class="font-semibold mb-1">Could not save theme settings</p>
@@ -69,44 +69,70 @@
             <div class="flex items-center justify-between">
                 <div>
                     <h2 class="font-semibold">Brand Colors</h2>
-                    <p class="text-sm text-gray-500">3 colors only — professional look.</p>
+                    <p class="text-sm text-gray-500">Preview updates across the full storefront. Save draft, then <strong>Publish</strong> to go live.</p>
                 </div>
             </div>
-            <div class="grid grid-cols-3 gap-4">
-                <label class="text-center">
-                    <span class="label block text-center mb-1">Primary</span>
-                    <input type="color" name="primary_color" value="{{ $settings->primary_color }}" class="w-full h-12 rounded-lg cursor-pointer border-0" data-preview-color>
+            @php
+                $colorRoles = [
+                    'primary_color' => [
+                        'label' => 'Primary',
+                        'usage' => 'Buttons, links, prices, cart badge, sale tags, header hover',
+                    ],
+                    'secondary_color' => [
+                        'label' => 'Secondary',
+                        'usage' => 'Footer background, newsletter bar, dark sections',
+                    ],
+                    'accent_color' => [
+                        'label' => 'Accent',
+                        'usage' => 'Review stars, countdown timer, accent highlights',
+                    ],
+                ];
+            @endphp
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                @foreach($colorRoles as $field => $role)
+                <label class="text-center group rounded-xl border border-gray-100 bg-gray-50/40 p-3 hover:border-gray-200 transition">
+                    <span class="label block text-center mb-1">{{ $role['label'] }}</span>
+                    <input
+                        type="color"
+                        name="{{ $field }}"
+                        value="{{ $field === 'accent_color' ? ($settings->accent_color ?? '#f59e0b') : $settings->{$field} }}"
+                        class="w-full h-12 rounded-lg cursor-pointer border-0"
+                        data-preview-color
+                        data-color-role="{{ str_replace('_color', '', $field) }}"
+                        title="{{ $role['usage'] }}"
+                    >
+                    <p class="text-[11px] font-mono text-gray-500 mt-2 uppercase tracking-wide" data-color-hex-display data-color-role="{{ str_replace('_color', '', $field) }}">{{ $settings->{$field} ?? '' }}</p>
+                    <p class="text-[10px] text-gray-400 mt-1 leading-snug min-h-[2.5rem] group-hover:text-gray-600 transition-colors" title="{{ $role['usage'] }}">{{ $role['usage'] }}</p>
                 </label>
-                <label class="text-center">
-                    <span class="label block text-center mb-1">Secondary</span>
-                    <input type="color" name="secondary_color" value="{{ $settings->secondary_color }}" class="w-full h-12 rounded-lg cursor-pointer border-0" data-preview-color>
-                </label>
-                <label class="text-center">
-                    <span class="label block text-center mb-1">Accent</span>
-                    <input type="color" name="accent_color" value="{{ $settings->accent_color ?? '#f59e0b' }}" class="w-full h-12 rounded-lg cursor-pointer border-0" data-preview-color>
-                </label>
+                @endforeach
             </div>
 
             <div class="rounded-xl border border-dashed border-gray-200 bg-gray-50/60 p-4 space-y-4">
                 <div>
                     <p class="text-sm font-semibold text-gray-800">Upload image to apply theme colors</p>
-                    <p class="text-xs text-gray-500 mt-1">Upload a logo, banner, or brand photo — colors will be extracted automatically. Click a swatch to preview, then apply to your theme.</p>
+                    <p class="text-xs text-gray-500 mt-1">Extract colors from any brand image, assign Primary / Secondary / Accent, then apply to the full preview.</p>
                 </div>
                 <x-admin.image-uploader
                     label=""
                     :palette-only="true"
                     accept="image/png,image/jpeg,image/jpg,image/gif,image/webp"
-                    hint="PNG, JPG, or WebP · not saved as logo"
+                    hint="PNG, JPG, or WebP · preview only until you Save & Publish"
                     :compact="true"
                     button-text="Choose image"
                 />
-                <div id="theme-image-palette" class="hidden rounded-lg border border-gray-200 bg-white p-4 space-y-3" data-image-palette-root>
+                <div id="theme-image-palette" class="hidden rounded-lg border border-gray-200 bg-white p-4 space-y-4" data-image-palette-root>
                     <div>
-                        <p class="text-sm font-medium text-gray-800">Extracted colors</p>
-                        <p class="text-xs text-gray-500">Click a swatch to set Primary, or apply the full palette below.</p>
+                        <p class="text-sm font-medium text-gray-800">Assign extracted colors</p>
+                        <p class="text-xs text-gray-500">Choose a role below, then click a color — or use the role buttons on each swatch.</p>
                     </div>
-                    <div class="flex flex-wrap gap-2" data-image-palette-swatches></div>
-                    <button type="button" class="btn-primary text-sm" data-apply-palette-theme>Apply palette to theme</button>
+                    <div class="flex flex-wrap gap-2" data-palette-role-tabs>
+                        <button type="button" class="palette-role-tab is-active" data-palette-role="primary" title="Buttons, links, prices, cart badge">Primary</button>
+                        <button type="button" class="palette-role-tab" data-palette-role="secondary" title="Footer & newsletter background">Secondary</button>
+                        <button type="button" class="palette-role-tab" data-palette-role="accent" title="Stars, countdown, accents">Accent</button>
+                    </div>
+                    <div class="flex flex-wrap gap-3" data-image-palette-swatches></div>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs" data-palette-mapping></div>
+                    <button type="button" class="btn-primary text-sm w-full sm:w-auto" data-apply-palette-theme>Apply colors to preview</button>
                 </div>
             </div>
         </div>
@@ -159,7 +185,7 @@
 
         <div class="flex flex-wrap items-center gap-3">
             <button type="submit" class="btn-primary">Save Draft</button>
-            <p class="text-sm text-gray-500">Live preview on the right updates as you edit.</p>
+            <p class="text-sm text-gray-500">Colors apply in Live Preview only until you click <strong>Publish</strong> in the builder bar.</p>
         </div>
     </form>
 

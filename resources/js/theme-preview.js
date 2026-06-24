@@ -5,6 +5,27 @@ import { onPageLoad } from './page-load';
 
 const PREVIEW_DESKTOP_WIDTH = 1280;
 
+const COLOR_ROLE_META = {
+    primary: {
+        field: 'primary_color',
+        label: 'Primary',
+        short: 'P',
+        usage: 'Buttons, links, prices, cart badge, sale tags',
+    },
+    secondary: {
+        field: 'secondary_color',
+        label: 'Secondary',
+        short: 'S',
+        usage: 'Footer & newsletter background',
+    },
+    accent: {
+        field: 'accent_color',
+        label: 'Accent',
+        short: 'A',
+        usage: 'Review stars, countdown, accents',
+    },
+};
+
 const slugify = (value) => value
     .toLowerCase()
     .trim()
@@ -357,9 +378,11 @@ const initThemeCustomizerLive = () => {
         html, body, .theme-body { font-family: var(--theme-font) !important; }
         .theme-container { max-width: var(--theme-container-width) !important; width: 100% !important; margin-left: auto !important; margin-right: auto !important; }
         .theme-btn, .theme-btn-primary, .btn-primary { border-radius: var(--theme-btn-radius) !important; }
-        .theme-btn-primary, .btn-primary, [data-cart-count], .bg-brand-600 { background-color: var(--theme-primary) !important; }
+        .theme-btn-primary, .btn-primary, [data-cart-count], .bg-brand-600, .hover\\:bg-brand-700:hover { background-color: var(--theme-primary) !important; }
+        .text-brand-600, .hover\\:text-brand-600:hover, .theme-logo-text, .theme-link, .theme-price-current { color: var(--theme-primary) !important; }
+        .border-brand-600, .ring-brand-600 { border-color: var(--theme-primary) !important; --tw-ring-color: var(--theme-primary) !important; }
+        .bg-brand-50, .bg-brand-50\\/30 { background-color: color-mix(in srgb, var(--theme-primary) 12%, white) !important; }
         .theme-btn-primary, .theme-btn-primary:hover, .theme-btn.theme-hero-btn, .theme-btn.theme-hero-btn:hover { color: #fff !important; }
-        .theme-logo-text, .theme-link, .theme-price-current { color: var(--theme-primary) !important; }
         .theme-nav a:hover { color: var(--theme-primary) !important; }
         .theme-badge-sale { background-color: var(--theme-primary) !important; color: #fff !important; }
         .theme-countdown-timer, .theme-review-stars, .theme-badge-sale.theme-accent { color: var(--theme-accent) !important; }
@@ -367,6 +390,15 @@ const initThemeCustomizerLive = () => {
         .theme-footer, .theme-newsletter { background: var(--theme-secondary) !important; }
         a:not(.theme-btn):hover { color: var(--theme-primary) !important; }
     `;
+
+    const syncColorHexDisplays = () => {
+        Object.entries(COLOR_ROLE_META).forEach(([role, meta]) => {
+            const hex = getVal(meta.field);
+            document.querySelectorAll(`[data-color-hex-display][data-color-role="${role}"]`).forEach((el) => {
+                el.textContent = hex || '—';
+            });
+        });
+    };
 
     const updateAdminSwatches = (v) => {
         document.querySelectorAll('[data-swatch-primary]').forEach((el) => { el.style.background = v.primary; });
@@ -426,6 +458,7 @@ const initThemeCustomizerLive = () => {
     const applyLivePreview = () => {
         const v = getFormValues();
         updateAdminSwatches(v);
+        syncColorHexDisplays();
 
         document.querySelectorAll('[data-theme-preview]').forEach((el) => applyToDocument(el.ownerDocument || document));
         document.querySelectorAll('[data-theme-preview-iframe]').forEach((iframe) => {
@@ -445,7 +478,41 @@ const initThemeCustomizerLive = () => {
 
     const paletteRoot = form.querySelector('[data-image-palette-root]');
     const paletteSwatches = form.querySelector('[data-image-palette-swatches]');
+    const paletteMapping = form.querySelector('[data-palette-mapping]');
+    const paletteRoleTabs = form.querySelector('[data-palette-role-tabs]');
     let paletteColors = [];
+    let activePaletteRole = 'primary';
+    let paletteAssignments = { primary: null, secondary: null, accent: null };
+
+    const syncPaletteMapping = () => {
+        if (!paletteMapping) {
+            return;
+        }
+
+        paletteMapping.innerHTML = Object.entries(COLOR_ROLE_META).map(([role, meta]) => {
+            const hex = paletteAssignments[role] || getVal(meta.field) || '—';
+            return `
+                <div class="palette-mapping-row rounded-lg border border-gray-100 bg-gray-50 px-3 py-2" title="${meta.usage}">
+                    <p class="font-semibold text-gray-800">${meta.label}</p>
+                    <p class="font-mono text-[11px] text-gray-600 mt-0.5">${hex}</p>
+                    <p class="text-[10px] text-gray-400 mt-1 leading-snug">${meta.usage}</p>
+                </div>
+            `;
+        }).join('');
+    };
+
+    const assignPaletteColor = (hex, role = activePaletteRole) => {
+        if (!hex || !COLOR_ROLE_META[role]) {
+            return;
+        }
+
+        paletteAssignments[role] = hex;
+        setVal(COLOR_ROLE_META[role].field, hex);
+        syncPaletteMapping();
+        syncColorHexDisplays();
+        renderImagePalette(paletteColors);
+        applyLivePreview();
+    };
 
     const renderImagePalette = (colors) => {
         if (!paletteRoot || !paletteSwatches) {
@@ -462,20 +529,82 @@ const initThemeCustomizerLive = () => {
 
         paletteRoot.classList.remove('hidden');
 
-        colors.forEach((hex) => {
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            btn.className = 'w-10 h-10 rounded-lg border-2 border-white shadow ring-1 ring-gray-200 hover:scale-105 transition-transform';
-            btn.style.backgroundColor = hex;
-            btn.title = hex;
-            btn.dataset.color = hex;
-            btn.addEventListener('click', () => {
-                setVal('primary_color', hex);
-                applyLivePreview();
+        if (!paletteAssignments.primary) {
+            paletteAssignments.primary = colors[0] || null;
+            paletteAssignments.secondary = colors[1] || colors[0] || null;
+            paletteAssignments.accent = colors[2] || colors[1] || colors[0] || null;
+            Object.entries(paletteAssignments).forEach(([role, hex]) => {
+                if (hex) {
+                    setVal(COLOR_ROLE_META[role].field, hex);
+                }
             });
-            paletteSwatches.appendChild(btn);
+            syncColorHexDisplays();
+        }
+
+        syncPaletteMapping();
+
+        paletteRoleTabs?.querySelectorAll('[data-palette-role]').forEach((tab) => {
+            tab.classList.toggle('is-active', tab.dataset.paletteRole === activePaletteRole);
+        });
+
+        colors.forEach((hex) => {
+            const wrap = document.createElement('div');
+            wrap.className = 'palette-swatch-card';
+
+            const swatch = document.createElement('button');
+            swatch.type = 'button';
+            swatch.className = 'palette-swatch-btn';
+            swatch.style.backgroundColor = hex;
+            swatch.title = `Assign ${hex} to ${COLOR_ROLE_META[activePaletteRole].label}`;
+            swatch.addEventListener('click', () => assignPaletteColor(hex, activePaletteRole));
+
+            const badges = document.createElement('div');
+            badges.className = 'palette-swatch-badges';
+            Object.entries(paletteAssignments).forEach(([role, assigned]) => {
+                if (assigned?.toLowerCase() === hex.toLowerCase()) {
+                    const badge = document.createElement('span');
+                    badge.className = `palette-swatch-badge is-${role}`;
+                    badge.textContent = COLOR_ROLE_META[role].short;
+                    badge.title = `${COLOR_ROLE_META[role].label}: ${COLOR_ROLE_META[role].usage}`;
+                    badges.appendChild(badge);
+                }
+            });
+
+            const roleRow = document.createElement('div');
+            roleRow.className = 'palette-swatch-roles';
+            Object.entries(COLOR_ROLE_META).forEach(([role, meta]) => {
+                const roleBtn = document.createElement('button');
+                roleBtn.type = 'button';
+                roleBtn.className = 'palette-swatch-role';
+                roleBtn.textContent = meta.short;
+                roleBtn.title = `Set as ${meta.label} — ${meta.usage}`;
+                roleBtn.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    assignPaletteColor(hex, role);
+                });
+                roleRow.appendChild(roleBtn);
+            });
+
+            const code = document.createElement('p');
+            code.className = 'palette-swatch-code';
+            code.textContent = hex;
+
+            wrap.appendChild(swatch);
+            wrap.appendChild(badges);
+            wrap.appendChild(code);
+            wrap.appendChild(roleRow);
+            paletteSwatches.appendChild(wrap);
         });
     };
+
+    paletteRoleTabs?.querySelectorAll('[data-palette-role]').forEach((tab) => {
+        tab.addEventListener('click', () => {
+            activePaletteRole = tab.dataset.paletteRole || 'primary';
+            paletteRoleTabs.querySelectorAll('[data-palette-role]').forEach((btn) => {
+                btn.classList.toggle('is-active', btn === tab);
+            });
+        });
+    });
 
     const applyPaletteFromFile = async (file) => {
         if (!file) {
@@ -494,8 +623,11 @@ const initThemeCustomizerLive = () => {
                 return;
             }
 
+            paletteAssignments = { primary: null, secondary: null, accent: null };
+            activePaletteRole = 'primary';
             renderImagePalette(colors);
-            window.AdminUI?.showToast?.('Colors extracted — click Apply palette to update your theme.', 'success');
+            applyLivePreview();
+            window.AdminUI?.showToast?.('Colors extracted — assign roles and apply to preview.', 'success');
         } catch (_) {
             window.AdminUI?.showToast?.('Could not read this image file.', 'error');
         }
@@ -515,21 +647,19 @@ const initThemeCustomizerLive = () => {
     };
 
     form.querySelector('[data-apply-palette-theme]')?.addEventListener('click', () => {
+        Object.entries(paletteAssignments).forEach(([role, hex]) => {
+            if (hex) {
+                setVal(COLOR_ROLE_META[role].field, hex);
+            }
+        });
+
         if (!paletteColors.length) {
             return;
         }
 
-        const [primary, secondary, accent] = [
-            paletteColors[0],
-            paletteColors[1] || paletteColors[0],
-            paletteColors[2] || paletteColors[1] || paletteColors[0],
-        ];
-
-        setVal('primary_color', primary);
-        setVal('secondary_color', secondary);
-        setVal('accent_color', accent);
         applyLivePreview();
-        window.AdminUI?.showToast?.('Theme colors applied from image palette.', 'success');
+        syncPaletteMapping();
+        window.AdminUI?.showToast?.('Colors applied to full preview. Save draft, then Publish to go live.', 'success');
     });
 
     const reloadPreviewIframe = (themeSlug = null) => {
@@ -651,6 +781,7 @@ const initThemeCustomizerLive = () => {
     });
 
     applyLivePreview();
+    syncPaletteMapping();
     scheduleFitDesktopPreview();
     window.addEventListener('resize', scheduleFitDesktopPreview);
 
@@ -704,7 +835,33 @@ const reloadPreviewIframes = (device = null) => {
     setTimeout(scheduleFitDesktopPreview, 300);
 };
 
+const initPreviewPageTabs = () => {
+    document.querySelectorAll('[data-preview-page-tabs]').forEach((wrap) => {
+        wrap.querySelectorAll('[data-preview-page]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const path = btn.dataset.previewPage || '/';
+                wrap.querySelectorAll('[data-preview-page]').forEach((b) => {
+                    b.classList.toggle('is-active', b === btn);
+                });
+
+                const theme = document.querySelector('[data-theme-customizer] [name="active_theme"]:checked')?.value || null;
+                const url = buildPreviewUrl(path, null, getPreviewDevice(), theme);
+                const label = btn.textContent?.trim() || 'Preview';
+
+                document.querySelectorAll('[data-theme-preview-iframe]').forEach((iframe) => {
+                    iframe.src = url;
+                    iframe.dataset.previewSrc = url.split('#')[0];
+                });
+
+                setPreviewUrl(url, `${label} — full theme preview`);
+                scheduleFitDesktopPreview();
+            });
+        });
+    });
+};
+
 const initBuilderPreview = () => {
+    initPreviewPageTabs();
     document.querySelectorAll('[data-preview-refresh]').forEach((btn) => {
         btn.addEventListener('click', () => reloadPreviewIframes());
     });

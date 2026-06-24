@@ -6,6 +6,7 @@
     'openUrl' => null,
     'previewLabel' => null,
     'previewSection' => null,
+    'previewPages' => null,
 ])
 
 @php
@@ -29,6 +30,7 @@
                 :open-url="$openUrl"
                 :preview-label="$previewLabel"
                 :preview-section="$previewSection"
+                :preview-pages="$previewPages ?? null"
             />
         @endif
     </div>
