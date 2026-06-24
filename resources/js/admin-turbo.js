@@ -8,7 +8,6 @@ if (Turbo.session?.drive) {
 
 document.addEventListener('turbo:before-cache', () => {
     document.getElementById('admin-confirm-modal')?.classList.add('hidden');
-    document.body.classList.remove('builder-mode');
 });
 
 document.addEventListener('turbo:load', () => {

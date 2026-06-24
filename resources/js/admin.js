@@ -665,7 +665,7 @@ const initAdminNavGroups = () => {
             return;
         }
 
-        const button = event.target.closest('[data-admin-nav-group] > button');
+        const button = event.target.closest('[data-admin-nav-toggle]');
         if (!button) {
             return;
         }
@@ -684,7 +684,7 @@ const initAdminNavGroups = () => {
         button.setAttribute('aria-expanded', expanded ? 'false' : 'true');
         children.classList.toggle('hidden', expanded);
         chevron?.classList.toggle('rotate-180', !expanded);
-    });
+    }, true);
 };
 
 const initAdminPage = () => {

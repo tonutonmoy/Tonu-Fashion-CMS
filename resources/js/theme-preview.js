@@ -219,6 +219,7 @@ const initBuilderMode = () => {
     }
 
     overlay?.classList.add('hidden');
+    scheduleFitDesktopPreview();
 };
 
 const initThemeCustomizerLive = () => {

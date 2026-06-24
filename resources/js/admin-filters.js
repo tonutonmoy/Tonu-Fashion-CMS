@@ -8,6 +8,8 @@ const debounce = (fn, ms = 350) => {
     };
 };
 
+const formDebouncers = new WeakMap();
+
 const buildFilterUrl = (form) => {
     const url = new URL(form.getAttribute('action') || window.location.pathname, window.location.origin);
     const params = new URLSearchParams();
@@ -33,13 +35,21 @@ const submitFilterForm = (form) => {
     }
 
     const target = buildFilterUrl(form);
+    const current = `${window.location.pathname}${window.location.search}`;
 
-    if (window.Turbo?.visit) {
-        window.Turbo.visit(target, { action: 'replace' });
+    if (`${new URL(target).pathname}${new URL(target).search}` === current) {
         return;
     }
 
-    window.location.href = target;
+    window.location.assign(target);
+};
+
+const debouncedFilterSubmit = (form) => {
+    if (!formDebouncers.has(form)) {
+        formDebouncers.set(form, debounce(() => submitFilterForm(form), 400));
+    }
+
+    formDebouncers.get(form)();
 };
 
 const initSearchSuggest = (input) => {
@@ -79,11 +89,7 @@ const initSearchSuggest = (input) => {
             return;
         }
         if (item.url) {
-            if (window.Turbo?.visit) {
-                window.Turbo.visit(item.url);
-            } else {
-                window.location.href = item.url;
-            }
+            window.location.assign(item.url);
             return;
         }
         input.value = item.value ?? item.label ?? '';
@@ -160,45 +166,65 @@ const initSearchSuggest = (input) => {
     });
 };
 
+const initAdminFiltersShell = () => {
+    if (document.documentElement.dataset.adminFiltersShell === '1') {
+        return;
+    }
+
+    document.documentElement.dataset.adminFiltersShell = '1';
+
+    document.addEventListener('input', (event) => {
+        const input = event.target;
+        if (!input.matches?.('form[data-admin-auto-filter] input')) {
+            return;
+        }
+
+        const form = input.closest('form[data-admin-auto-filter]');
+        if (!form || input.dataset.searchSuggest) {
+            return;
+        }
+
+        if (input.type === 'hidden' || input.type === 'submit' || input.type === 'button') {
+            return;
+        }
+
+        if (input.type === 'search' || input.type === 'text' || input.name === 'search' || input.name === 'q') {
+            debouncedFilterSubmit(form);
+        }
+    });
+
+    document.addEventListener('change', (event) => {
+        const el = event.target;
+        const form = el.closest?.('form[data-admin-auto-filter]');
+        if (!form) {
+            return;
+        }
+
+        if (el.matches('select, input[type="date"], input[type="checkbox"], input[type="radio"]')) {
+            submitFilterForm(form);
+        }
+    });
+
+    document.addEventListener('submit', (event) => {
+        const form = event.target;
+        if (!form?.matches?.('form[data-admin-auto-filter]')) {
+            return;
+        }
+
+        event.preventDefault();
+        submitFilterForm(form);
+    }, true);
+};
+
 export const initAdminAutoFilters = () => {
     if (!document.body.classList.contains('admin-body')) {
         return;
     }
 
-    document.querySelectorAll('form[data-admin-auto-filter]').forEach((form) => {
-        if (form.dataset.autoFilterBound) {
-            return;
-        }
-        form.dataset.autoFilterBound = '1';
+    initAdminFiltersShell();
 
-        form.addEventListener('submit', (event) => {
-            event.preventDefault();
-            submitFilterForm(form);
-        });
-
-        const debouncedSubmit = debounce(() => submitFilterForm(form), 400);
-
-        form.querySelectorAll('input, select').forEach((el) => {
-            if (el.type === 'hidden' || el.type === 'submit' || el.type === 'button') {
-                return;
-            }
-
-            if (el.dataset.searchSuggest) {
-                initSearchSuggest(el);
-                const suggestSubmit = debounce(() => submitFilterForm(form), 700);
-                el.addEventListener('input', suggestSubmit);
-                el.addEventListener('keydown', (e) => {
-                    if (e.key === 'Enter' && form) {
-                        e.preventDefault();
-                        submitFilterForm(form);
-                    }
-                });
-            } else if (el.type === 'search' || el.type === 'text' || el.name === 'search' || el.name === 'q') {
-                el.addEventListener('input', debouncedSubmit);
-            } else {
-                el.addEventListener('change', () => submitFilterForm(form));
-            }
-        });
+    document.querySelectorAll('form[data-admin-auto-filter] [data-search-suggest]').forEach((input) => {
+        initSearchSuggest(input);
     });
 };
 

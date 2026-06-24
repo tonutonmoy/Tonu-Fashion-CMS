@@ -18,7 +18,7 @@
 @endphp
 
 <aside class="builder-preview hidden xl:block" data-builder-preview @if($previewSection) data-preview-section="{{ $previewSection }}" @endif>
-    <div class="builder-preview-panel card p-3">
+    <div class="builder-preview-panel card p-3 flex flex-col min-h-0 h-full">
         <div class="flex items-center justify-between gap-2 mb-2">
             <div class="min-w-0">
                 <h3 class="font-semibold text-sm">Live Preview</h3>

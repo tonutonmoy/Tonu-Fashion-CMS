@@ -47,7 +47,7 @@
             $groupActive = collect($patterns)->contains(fn ($p) => request()->routeIs(trim($p)));
         @endphp
         <div class="admin-nav-group" data-admin-nav-group>
-            <button type="button" class="admin-nav-link w-full {{ $groupActive ? 'is-active' : '' }}" aria-expanded="{{ $groupActive ? 'true' : 'false' }}">
+            <button type="button" data-admin-nav-toggle class="admin-nav-link w-full {{ $groupActive ? 'is-active' : '' }}" aria-expanded="{{ $groupActive ? 'true' : 'false' }}">
                 <x-admin.icon :name="$item['icon']" class="w-5 h-5 shrink-0 {{ $groupActive ? 'text-red-400' : 'text-gray-400' }}" />
                 <span class="flex-1 text-left">{{ $item['label'] }}</span>
                 <svg class="w-4 h-4 shrink-0 transition-transform admin-nav-chevron {{ $groupActive ? 'rotate-180' : '' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
