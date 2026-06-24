@@ -86,6 +86,29 @@
                     <input type="color" name="accent_color" value="{{ $settings->accent_color ?? '#f59e0b' }}" class="w-full h-12 rounded-lg cursor-pointer border-0" data-preview-color>
                 </label>
             </div>
+
+            <div class="rounded-xl border border-dashed border-gray-200 bg-gray-50/60 p-4 space-y-4">
+                <div>
+                    <p class="text-sm font-semibold text-gray-800">Upload image to apply theme colors</p>
+                    <p class="text-xs text-gray-500 mt-1">Upload a logo, banner, or brand photo — colors will be extracted automatically. Click a swatch to preview, then apply to your theme.</p>
+                </div>
+                <x-admin.image-uploader
+                    label=""
+                    :palette-only="true"
+                    accept="image/png,image/jpeg,image/jpg,image/gif,image/webp"
+                    hint="PNG, JPG, or WebP · not saved as logo"
+                    :compact="true"
+                    button-text="Choose image"
+                />
+                <div id="theme-image-palette" class="hidden rounded-lg border border-gray-200 bg-white p-4 space-y-3" data-image-palette-root>
+                    <div>
+                        <p class="text-sm font-medium text-gray-800">Extracted colors</p>
+                        <p class="text-xs text-gray-500">Click a swatch to set Primary, or apply the full palette below.</p>
+                    </div>
+                    <div class="flex flex-wrap gap-2" data-image-palette-swatches></div>
+                    <button type="button" class="btn-primary text-sm" data-apply-palette-theme>Apply palette to theme</button>
+                </div>
+            </div>
         </div>
 
         <div class="card p-5 space-y-4">
@@ -93,14 +116,6 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <x-admin.image-uploader name="logo" label="Store Logo" :existing-url="image_url($settings->logo)" accept="image/png,image/jpeg,image/jpg,image/gif,image/webp,image/svg+xml,.svg" hint="Shown in site header · PNG, JPG, WebP or SVG" />
                 <x-admin.image-uploader name="favicon" label="Favicon" :existing-url="image_url($settings->favicon)" accept="image/png,image/jpeg,image/jpg,image/gif,image/webp,image/svg+xml,image/x-icon,.ico" hint="Browser tab icon · PNG, ICO or square image" />
-            </div>
-            <div id="theme-image-palette" class="hidden rounded-lg border border-gray-200 bg-gray-50 p-4 space-y-3" data-image-palette-root>
-                <div>
-                    <p class="text-sm font-medium text-gray-800">Colors from uploaded image</p>
-                    <p class="text-xs text-gray-500">Click a swatch to preview, or apply the full palette to your theme.</p>
-                </div>
-                <div class="flex flex-wrap gap-2" data-image-palette-swatches></div>
-                <button type="button" class="btn-primary text-sm" data-apply-palette-theme>Apply palette to theme</button>
             </div>
             <div>
                 <label class="label">Font</label>

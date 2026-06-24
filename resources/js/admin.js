@@ -145,8 +145,6 @@ const initUploaders = () => {
         }
 
         uploader.dataset.uploaderReady = '1';
-        if (uploader.dataset.uploaderReady === '1') return;
-        uploader.dataset.uploaderReady = '1';
 
         const input = uploader.querySelector('[data-uploader-input]');
         const drop = uploader.querySelector('[data-uploader-drop]');

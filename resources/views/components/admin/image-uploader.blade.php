@@ -11,6 +11,7 @@
     'compact' => false,
     'required' => false,
     'buttonText' => null,
+    'paletteOnly' => false,
 ])
 
 @php
@@ -59,15 +60,16 @@
         </div>
     @endif
 
-    <div class="admin-uploader-drop" data-uploader-drop tabindex="0" role="button" aria-label="Upload {{ strtolower($label) }}">
+    <div class="admin-uploader-drop" data-uploader-drop tabindex="0" role="button" aria-label="Upload {{ strtolower($label ?: 'image') }}">
         <input
             type="file"
-            name="{{ $inputName }}"
+            @unless($paletteOnly) name="{{ $inputName }}" @endunless
             accept="{{ $accept }}"
             @if($multiple) multiple @endif
             @if($required) required @endif
             class="sr-only"
             data-uploader-input
+            @if($paletteOnly) data-theme-palette-input @endif
         >
         <div class="admin-uploader-drop-inner pointer-events-none">
             <div class="admin-uploader-icon">

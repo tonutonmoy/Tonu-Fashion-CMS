@@ -148,14 +148,35 @@ const extractDominantColors = async (file, maxColors = 6) => {
         return [];
     }
 
-    const bitmap = await createImageBitmap(file);
+    const loadBitmap = async () => {
+        if (typeof createImageBitmap === 'function') {
+            try {
+                return await createImageBitmap(file);
+            } catch (_) {}
+        }
+
+        const url = URL.createObjectURL(file);
+        try {
+            const img = await new Promise((resolve, reject) => {
+                const el = new Image();
+                el.onload = () => resolve(el);
+                el.onerror = reject;
+                el.src = url;
+            });
+            return img;
+        } finally {
+            URL.revokeObjectURL(url);
+        }
+    };
+
+    const source = await loadBitmap();
     const size = 48;
     const canvas = document.createElement('canvas');
     canvas.width = size;
     canvas.height = size;
     const ctx = canvas.getContext('2d');
-    ctx.drawImage(bitmap, 0, 0, size, size);
-    bitmap.close?.();
+    ctx.drawImage(source, 0, 0, size, size);
+    source.close?.();
 
     const { data } = ctx.getImageData(0, 0, size, size);
     const buckets = new Map();
@@ -422,27 +443,11 @@ const initThemeCustomizerLive = () => {
         });
     };
 
-    const applyFileToPreviews = async (name, file) => {
-        if (!file?.type?.startsWith('image/')) return;
-
-        const dataUrl = await readFileAsDataUrl(file);
-        document.querySelectorAll('[data-theme-preview-iframe]').forEach((iframe) => {
-            try {
-                const doc = iframe.contentDocument;
-                if (name === 'logo') applyLogoToDoc(doc, dataUrl);
-                if (name === 'favicon') applyFaviconToDoc(doc, dataUrl);
-            } catch (_) {}
-        });
-
-        const colors = await extractDominantColors(file);
-        renderImagePalette(form, colors);
-    };
-
     const paletteRoot = form.querySelector('[data-image-palette-root]');
     const paletteSwatches = form.querySelector('[data-image-palette-swatches]');
     let paletteColors = [];
 
-    const renderImagePalette = (paletteForm, colors) => {
+    const renderImagePalette = (colors) => {
         if (!paletteRoot || !paletteSwatches) {
             return;
         }
@@ -469,6 +474,43 @@ const initThemeCustomizerLive = () => {
                 applyLivePreview();
             });
             paletteSwatches.appendChild(btn);
+        });
+    };
+
+    const applyPaletteFromFile = async (file) => {
+        if (!file) {
+            return;
+        }
+
+        if (!file.type?.startsWith('image/') || file.type === 'image/svg+xml') {
+            window.AdminUI?.showToast?.('Use PNG, JPG, or WebP to extract theme colors.', 'error');
+            return;
+        }
+
+        try {
+            const colors = await extractDominantColors(file);
+            if (!colors.length) {
+                window.AdminUI?.showToast?.('Could not extract colors from this image.', 'error');
+                return;
+            }
+
+            renderImagePalette(colors);
+            window.AdminUI?.showToast?.('Colors extracted — click Apply palette to update your theme.', 'success');
+        } catch (_) {
+            window.AdminUI?.showToast?.('Could not read this image file.', 'error');
+        }
+    };
+
+    const applyFileToPreviews = async (name, file) => {
+        if (!file?.type?.startsWith('image/')) return;
+
+        const dataUrl = await readFileAsDataUrl(file);
+        document.querySelectorAll('[data-theme-preview-iframe]').forEach((iframe) => {
+            try {
+                const doc = iframe.contentDocument;
+                if (name === 'logo') applyLogoToDoc(doc, dataUrl);
+                if (name === 'favicon') applyFaviconToDoc(doc, dataUrl);
+            } catch (_) {}
         });
     };
 
@@ -513,9 +555,23 @@ const initThemeCustomizerLive = () => {
 
     form.addEventListener('change', (e) => {
         const target = e.target;
-        if (!target.matches('[name="logo"], [name="favicon"]')) return;
+
+        if (target.matches('[data-theme-palette-input]')) {
+            const file = target.files?.[0];
+            if (file) {
+                applyPaletteFromFile(file);
+            }
+            return;
+        }
+
+        if (!target.matches('[name="logo"], [name="favicon"]')) {
+            return;
+        }
+
         const file = target.files?.[0];
-        if (file) applyFileToPreviews(target.name, file);
+        if (file) {
+            applyFileToPreviews(target.name, file);
+        }
     });
 
     form.addEventListener('submit', async (event) => {
