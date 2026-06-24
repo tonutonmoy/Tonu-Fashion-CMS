@@ -94,6 +94,14 @@
                 <x-admin.image-uploader name="logo" label="Store Logo" :existing-url="image_url($settings->logo)" accept="image/png,image/jpeg,image/jpg,image/gif,image/webp,image/svg+xml,.svg" hint="Shown in site header · PNG, JPG, WebP or SVG" />
                 <x-admin.image-uploader name="favicon" label="Favicon" :existing-url="image_url($settings->favicon)" accept="image/png,image/jpeg,image/jpg,image/gif,image/webp,image/svg+xml,image/x-icon,.ico" hint="Browser tab icon · PNG, ICO or square image" />
             </div>
+            <div id="theme-image-palette" class="hidden rounded-lg border border-gray-200 bg-gray-50 p-4 space-y-3" data-image-palette-root>
+                <div>
+                    <p class="text-sm font-medium text-gray-800">Colors from uploaded image</p>
+                    <p class="text-xs text-gray-500">Click a swatch to preview, or apply the full palette to your theme.</p>
+                </div>
+                <div class="flex flex-wrap gap-2" data-image-palette-swatches></div>
+                <button type="button" class="btn-primary text-sm" data-apply-palette-theme>Apply palette to theme</button>
+            </div>
             <div>
                 <label class="label">Font</label>
                 <select name="font_family" class="input" data-preview-font>

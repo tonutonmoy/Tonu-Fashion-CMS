@@ -10,6 +10,7 @@ use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\StockMovement;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -504,6 +505,44 @@ class InventoryService
                 'admin_id' => $row->admin_id,
                 'created_at' => \Carbon\Carbon::parse($row->created_at),
             ]);
+    }
+
+    public function paginateMovementLog(int $perPage = 10, ?int $page = null): LengthAwarePaginator
+    {
+        $page = $page ?? 1;
+
+        if ($this->usesMongoMovements()) {
+            return StockMovement::query()
+                ->orderByDesc('created_at')
+                ->paginate($perPage, ['*'], 'page', $page)
+                ->withQueryString();
+        }
+
+        $total = (int) DB::table('stock_movements')->count();
+        $rows = DB::table('stock_movements')
+            ->orderByDesc('created_at')
+            ->forPage($page, $perPage)
+            ->get();
+
+        $items = collect($rows)->map(fn ($row) => (object) [
+            'id' => $row->id,
+            'product_variant_id' => $row->product_variant_id,
+            'product_id' => $row->product_id,
+            'order_id' => $row->order_id,
+            'type' => StockMovementType::from($row->type),
+            'quantity' => (int) $row->quantity,
+            'note' => $row->note,
+            'admin_id' => $row->admin_id,
+            'created_at' => \Carbon\Carbon::parse($row->created_at),
+        ]);
+
+        return new LengthAwarePaginator(
+            $items,
+            $total,
+            $perPage,
+            $page,
+            ['path' => request()->url(), 'query' => request()->query()],
+        );
     }
 
     public function summary(): array

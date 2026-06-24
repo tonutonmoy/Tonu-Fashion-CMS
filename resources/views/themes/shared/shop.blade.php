@@ -1,7 +1,7 @@
 @extends(theme_layout())
 
 @section('content')
-<div class="theme-container py-4 sm:py-6 lg:py-8">
+<div class="theme-container my-10">
     <div class="theme-shop-layout">
         <div id="shop-filter-overlay" class="shop-filter-overlay md:hidden hidden" aria-hidden="true"></div>
 

@@ -141,6 +141,59 @@ const readFileAsDataUrl = (file) => new Promise((resolve, reject) => {
     reader.readAsDataURL(file);
 });
 
+const rgbToHex = (r, g, b) => `#${[r, g, b].map((c) => Math.min(255, c).toString(16).padStart(2, '0')).join('')}`;
+
+const extractDominantColors = async (file, maxColors = 6) => {
+    if (!file?.type?.startsWith('image/') || file.type === 'image/svg+xml') {
+        return [];
+    }
+
+    const bitmap = await createImageBitmap(file);
+    const size = 48;
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(bitmap, 0, 0, size, size);
+    bitmap.close?.();
+
+    const { data } = ctx.getImageData(0, 0, size, size);
+    const buckets = new Map();
+
+    for (let i = 0; i < data.length; i += 4) {
+        if (data[i + 3] < 128) {
+            continue;
+        }
+
+        const lum = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+        if (lum > 245 || lum < 15) {
+            continue;
+        }
+
+        const r = Math.round(data[i] / 32) * 32;
+        const g = Math.round(data[i + 1] / 32) * 32;
+        const b = Math.round(data[i + 2] / 32) * 32;
+        const key = `${r},${g},${b}`;
+        buckets.set(key, (buckets.get(key) || 0) + 1);
+    }
+
+    const seen = new Set();
+    const colors = [];
+
+    [...buckets.entries()]
+        .sort((a, b) => b[1] - a[1])
+        .forEach(([key]) => {
+            const [r, g, b] = key.split(',').map(Number);
+            const hex = rgbToHex(r, g, b);
+            if (!seen.has(hex)) {
+                seen.add(hex);
+                colors.push(hex);
+            }
+        });
+
+    return colors.slice(0, maxColors);
+};
+
 const compressRasterImage = (file, maxWidth = 1200, quality = 0.82, targetMaxBytes = 1.8 * 1024 * 1024) => new Promise((resolve) => {
     if (!file?.type?.startsWith('image/') || ['image/svg+xml', 'image/gif', 'image/x-icon'].includes(file.type)) {
         resolve(file);
@@ -380,7 +433,62 @@ const initThemeCustomizerLive = () => {
                 if (name === 'favicon') applyFaviconToDoc(doc, dataUrl);
             } catch (_) {}
         });
+
+        const colors = await extractDominantColors(file);
+        renderImagePalette(form, colors);
     };
+
+    const paletteRoot = form.querySelector('[data-image-palette-root]');
+    const paletteSwatches = form.querySelector('[data-image-palette-swatches]');
+    let paletteColors = [];
+
+    const renderImagePalette = (paletteForm, colors) => {
+        if (!paletteRoot || !paletteSwatches) {
+            return;
+        }
+
+        paletteColors = colors;
+        paletteSwatches.innerHTML = '';
+
+        if (!colors.length) {
+            paletteRoot.classList.add('hidden');
+            return;
+        }
+
+        paletteRoot.classList.remove('hidden');
+
+        colors.forEach((hex) => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'w-10 h-10 rounded-lg border-2 border-white shadow ring-1 ring-gray-200 hover:scale-105 transition-transform';
+            btn.style.backgroundColor = hex;
+            btn.title = hex;
+            btn.dataset.color = hex;
+            btn.addEventListener('click', () => {
+                setVal('primary_color', hex);
+                applyLivePreview();
+            });
+            paletteSwatches.appendChild(btn);
+        });
+    };
+
+    form.querySelector('[data-apply-palette-theme]')?.addEventListener('click', () => {
+        if (!paletteColors.length) {
+            return;
+        }
+
+        const [primary, secondary, accent] = [
+            paletteColors[0],
+            paletteColors[1] || paletteColors[0],
+            paletteColors[2] || paletteColors[1] || paletteColors[0],
+        ];
+
+        setVal('primary_color', primary);
+        setVal('secondary_color', secondary);
+        setVal('accent_color', accent);
+        applyLivePreview();
+        window.AdminUI?.showToast?.('Theme colors applied from image palette.', 'success');
+    });
 
     const reloadPreviewIframe = (themeSlug = null) => {
         const theme = themeSlug || getVal('active_theme');

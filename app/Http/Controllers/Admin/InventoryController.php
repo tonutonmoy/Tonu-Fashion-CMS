@@ -12,6 +12,7 @@ use App\Services\SettingService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\View\View;
 
@@ -25,11 +26,21 @@ class InventoryController extends Controller
     public function index(Request $request): View
     {
         $lowStockOnly = $request->boolean('low_stock');
-        $groups = $this->inventory->productGroupedRows($lowStockOnly, $request->get('search'));
+        $allGroups = $this->inventory->productGroupedRows($lowStockOnly, $request->get('search'));
+        $perPage = admin_per_page();
+        $page = $request->integer('page', 1);
+        $groups = new LengthAwarePaginator(
+            $allGroups->forPage($page, $perPage)->values(),
+            $allGroups->count(),
+            $perPage,
+            $page,
+            ['path' => $request->url(), 'query' => $request->query()],
+        );
 
         return view('admin.inventory.index', [
             'groups' => $groups,
-            'totalStockValue' => $groups->sum('stock_value'),
+            'totalStockValue' => $allGroups->sum('stock_value'),
+            'lowStockCount' => $allGroups->filter(fn (array $g) => $g['available_stock'] < $this->inventory->lowStockThreshold())->count(),
             'lowStockOnly' => $lowStockOnly,
             'threshold' => $this->inventory->lowStockThreshold(),
         ]);
@@ -54,10 +65,10 @@ class InventoryController extends Controller
 
     public function log(Request $request): View
     {
-        $movements = $this->inventory->movementLog(200);
+        $movements = $this->inventory->paginateMovementLog(admin_per_page(), $request->integer('page', 1));
 
-        $variantIds = $movements->pluck('product_variant_id')->filter()->unique()->values();
-        $productIds = $movements->pluck('product_id')->filter()->unique()->values();
+        $variantIds = $movements->getCollection()->pluck('product_variant_id')->filter()->unique()->values();
+        $productIds = $movements->getCollection()->pluck('product_id')->filter()->unique()->values();
 
         $variants = ProductVariant::query()
             ->with('product:id,name')

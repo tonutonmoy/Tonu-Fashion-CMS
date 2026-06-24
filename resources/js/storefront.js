@@ -2,7 +2,7 @@ import * as Turbo from '@hotwired/turbo';
 
 window.Turbo = Turbo;
 
-if (Turbo.session?.drive) {
+if (Turbo.session?.drive && typeof Turbo.session.drive === 'object') {
     Turbo.session.drive.preloadOnHover = true;
 }
 

@@ -20,7 +20,7 @@ return [
         'prefer_webp' => true,
     ],
     'pagination' => [
-        'products' => 12,
+        'products' => 10,
         'admin' => 10,
         'orders' => 10,
     ],

@@ -206,7 +206,7 @@ class SupportChatService
             ->when($status, fn ($q) => $q->where('status', $status))
             ->orderByDesc('last_message_at')
             ->orderByDesc('updated_at')
-            ->paginate(20);
+            ->paginate(admin_per_page());
     }
 
     public function totalAdminUnread(): int

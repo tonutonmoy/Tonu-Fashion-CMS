@@ -80,9 +80,13 @@ class ShopController extends Controller
     private function paginateShop(array $filters)
     {
         $perPage = config('fashion.pagination.products');
-        $hasFilters = collect($filters)->filter(fn ($value) => $value !== null && $value !== '')->isNotEmpty();
+        $page = max(1, (int) ($filters['page'] ?? 1));
+        $hasFilters = collect($filters)
+            ->except(['ajax', 'page'])
+            ->filter(fn ($value) => $value !== null && $value !== '')
+            ->isNotEmpty();
 
-        if ($hasFilters) {
+        if ($hasFilters || $page > 1) {
             return $this->products->paginateShop($filters, $perPage);
         }
 

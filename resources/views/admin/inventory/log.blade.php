@@ -55,4 +55,5 @@
         </table>
     </div>
 </div>
+<div class="mt-4">{{ $movements->withQueryString()->links() }}</div>
 @endsection

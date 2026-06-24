@@ -18,7 +18,7 @@
     </div>
     <div class="card p-5">
         <p class="text-sm text-gray-500">Low stock items (&lt; {{ $threshold }})</p>
-        <p class="text-3xl font-bold text-orange-600 mt-1">{{ $groups->filter(fn ($g) => $g['available_stock'] < $threshold)->count() }}</p>
+        <p class="text-3xl font-bold text-orange-600 mt-1">{{ $lowStockCount }}</p>
     </div>
     <div class="card p-5">
         <form action="{{ route('admin.inventory.preferences') }}" method="POST" class="flex flex-col sm:flex-row gap-3 items-end">
@@ -115,6 +115,7 @@
         </table>
     </div>
 </div>
+<div class="mt-4">{{ $groups->withQueryString()->links() }}</div>
 
 <div id="inventory-adjust-modal" class="fixed inset-0 z-[80] hidden" aria-hidden="true">
     <div class="absolute inset-0 bg-black/40" data-inventory-modal-close></div>

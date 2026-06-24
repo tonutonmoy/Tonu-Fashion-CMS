@@ -175,13 +175,13 @@ class HomepageBuilderService
                     ->with(['images', 'category'])
                     ->where('status', RecordStatus::Active)
                     ->latest()
-                    ->limit($settings['limit'] ?? 8)
+                    ->limit($this->productLimit($settings))
                     ->get()),
                 'settings' => $settings,
             ],
             HomepageSectionKey::FlashSale->value => [
                 'products' => $this->flashSale->isSectionEnabled()
-                    ? $this->cachedProductList('flash_sale', fn () => $this->flashSale->getProducts((int) ($settings['limit'] ?? 8)))
+                    ? $this->cachedProductList('flash_sale', fn () => $this->flashSale->getProducts($this->productLimit($settings)))
                     : collect(),
                 'settings' => $settings,
                 'active' => $this->flashSale->isSectionEnabled(),
@@ -189,7 +189,7 @@ class HomepageBuilderService
                 'ends_at' => $this->flashSale->endsAtIso(),
             ],
             HomepageSectionKey::BestSellers->value => [
-                'products' => $this->cachedProductList('best_sellers', fn () => $this->getBestSellers((int) ($settings['limit'] ?? 8))),
+                'products' => $this->cachedProductList('best_sellers', fn () => $this->getBestSellers($this->productLimit($settings))),
                 'settings' => $settings,
             ],
             HomepageSectionKey::CustomerReviews->value => [
@@ -247,18 +247,25 @@ class HomepageBuilderService
         );
     }
 
+    private function productLimit(array $settings, int $default = 8): int
+    {
+        return min(8, max(1, (int) ($settings['limit'] ?? $default)));
+    }
+
     private function getProducts(array $settings, string $type): Collection
     {
         if (! empty($settings['product_ids'])) {
+            $ids = array_slice((array) $settings['product_ids'], 0, 8);
+
             return Product::query()
                 ->with(['images', 'category'])
-                ->whereIn('id', $settings['product_ids'])
+                ->whereIn('id', $ids)
                 ->where('status', RecordStatus::Active)
                 ->get();
         }
 
         if ($type === 'featured') {
-            return $this->cachedProductList('featured', fn () => $this->products->getFeatured($settings['limit'] ?? 8));
+            return $this->cachedProductList('featured', fn () => $this->products->getFeatured($this->productLimit($settings)));
         }
 
         return collect();
