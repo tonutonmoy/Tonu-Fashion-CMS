@@ -103,6 +103,11 @@ class AppServiceProvider extends ServiceProvider
                 ],
                 'lowStockCount' => 0,
                 'lowStockThreshold' => app(InventoryService::class)->lowStockThreshold(),
+                'adminBuilderMode' => request()->routeIs([
+                    'admin.builder.*',
+                    'admin.theme.*',
+                    'admin.cms.*',
+                ]),
             ];
 
             if (auth()->check() && auth()->user()?->canAdmin('store')) {

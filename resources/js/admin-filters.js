@@ -41,7 +41,7 @@ const submitFilterForm = (form) => {
         return;
     }
 
-    window.location.assign(target);
+    window.location.href = target;
 };
 
 const debouncedFilterSubmit = (form) => {
@@ -204,16 +204,6 @@ const initAdminFiltersShell = () => {
             submitFilterForm(form);
         }
     });
-
-    document.addEventListener('submit', (event) => {
-        const form = event.target;
-        if (!form?.matches?.('form[data-admin-auto-filter]')) {
-            return;
-        }
-
-        event.preventDefault();
-        submitFilterForm(form);
-    }, true);
 };
 
 export const initAdminAutoFilters = () => {

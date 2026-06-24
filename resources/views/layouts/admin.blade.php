@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" data-turbo="false">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -9,7 +9,7 @@
     <title>@yield('title', 'Admin') | {{ $storeSettings['name'] ?? config('app.name') }}</title>
     @vite(['resources/css/app.css', 'resources/js/admin-entry.js'])
 </head>
-<body class="admin-body bg-gray-100 min-h-screen theme-mode-{{ $colorMode ?? 'light' }}" data-color-mode="{{ $colorMode ?? 'light' }}" data-admin-support-notify>
+<body class="admin-body bg-gray-100 min-h-screen theme-mode-{{ $colorMode ?? 'light' }} {{ ($adminBuilderMode ?? false) ? 'builder-mode' : '' }}" data-color-mode="{{ $colorMode ?? 'light' }}" data-admin-support-notify data-turbo="false">
     <x-admin.toast />
     <x-admin.confirm-modal />
     <div class="flex min-h-screen">

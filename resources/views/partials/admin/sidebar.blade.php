@@ -16,10 +16,8 @@
                 ['route' => 'admin.users.index', 'match' => 'admin.users.*', 'icon' => 'customers', 'label' => 'Team Members', 'visible' => $user?->role->canManageUsers()],
                 ['route' => 'admin.products.index', 'match' => 'admin.products.*', 'icon' => 'products', 'label' => 'Products', 'visible' => $user?->canAdmin('store')],
                 ['route' => 'admin.inventory.index', 'match' => 'admin.inventory.*', 'icon' => 'products', 'label' => 'Inventory', 'visible' => $user?->canAdmin('store')],
-                ['type' => 'group', 'label' => 'Reports', 'icon' => 'chart', 'visible' => $user?->canAdmin('store'), 'match' => 'admin.reports.*', 'children' => [
-                    ['route' => 'admin.reports.profit-loss', 'match' => 'admin.reports.profit-loss', 'label' => 'Profit & Loss'],
-                    ['route' => 'admin.reports.inventory-details', 'match' => 'admin.reports.inventory-details', 'label' => 'Inventory Details'],
-                ]],
+                ['route' => 'admin.reports.profit-loss', 'match' => 'admin.reports.profit-loss', 'icon' => 'chart', 'label' => 'Profit & Loss', 'visible' => $user?->canAdmin('store')],
+                ['route' => 'admin.reports.inventory-details', 'match' => 'admin.reports.inventory-details', 'icon' => 'chart', 'label' => 'Inventory Report', 'visible' => $user?->canAdmin('store')],
                 ['route' => 'admin.expenses.index', 'match' => 'admin.expenses.*', 'icon' => 'revenue', 'label' => 'Expenses', 'visible' => $user?->canAdmin('store')],
                 ['route' => 'admin.categories.index', 'match' => 'admin.categories.*', 'icon' => 'categories', 'label' => 'Categories', 'visible' => $user?->canAdmin('store')],
                 ['route' => 'admin.brands.index', 'match' => 'admin.brands.*', 'icon' => 'brands', 'label' => 'Brands', 'visible' => $user?->canAdmin('store')],
