@@ -148,10 +148,13 @@ class ProductRepository extends BaseRepository implements ProductRepositoryInter
     public function getPriceBounds(): array
     {
         return Cache::remember('shop.price_bounds', app(StorefrontCacheService::class)->ttl(), function () {
-            $base = $this->model->newQuery()->where('status', RecordStatus::Active);
+            $bounds = $this->model->newQuery()
+                ->where('status', RecordStatus::Active)
+                ->selectRaw('MIN(effective_price) as min_price, MAX(effective_price) as max_price')
+                ->first();
 
-            $min = (float) ($base->clone()->orderBy('effective_price')->value('effective_price') ?? 0);
-            $max = (float) ($base->clone()->orderByDesc('effective_price')->value('effective_price') ?? 0);
+            $min = (float) ($bounds->min_price ?? 0);
+            $max = (float) ($bounds->max_price ?? 0);
 
             if ($max <= 0) {
                 return ['min' => 0, 'max' => 10000];

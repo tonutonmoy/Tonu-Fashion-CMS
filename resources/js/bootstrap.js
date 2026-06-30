@@ -1,4 +1,6 @@
 import axios from 'axios';
+import { onPageLoad } from './page-load';
+
 window.axios = axios;
 window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 
@@ -10,4 +12,4 @@ const syncAxiosCsrf = () => {
 };
 
 syncAxiosCsrf();
-document.addEventListener('DOMContentLoaded', syncAxiosCsrf);
+onPageLoad(syncAxiosCsrf);

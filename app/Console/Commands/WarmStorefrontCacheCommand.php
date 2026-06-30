@@ -85,7 +85,7 @@ class WarmStorefrontCacheCommand extends Command
             ->where('status', RecordStatus::Active)
             ->orderByDesc('featured')
             ->latest()
-            ->limit(48)
+            ->limit((int) config('fashion.pagination.products', 20))
             ->pluck('slug')
             ->all();
 

@@ -2,6 +2,8 @@
  * Lightweight Turbo helpers — no top progress bar or page fade.
  */
 
+import { onPageLoad } from './page-load';
+
 function markInternalLinks(root = document) {
     if (document.body?.classList.contains('admin-body')) {
         return;
@@ -34,15 +36,6 @@ function markInternalLinks(root = document) {
     });
 }
 
-function initTurboInstant() {
-    markInternalLinks();
-    document.addEventListener('turbo:load', () => markInternalLinks());
-}
-
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initTurboInstant, { once: true });
-} else {
-    initTurboInstant();
-}
+onPageLoad(() => markInternalLinks());
 
 export { markInternalLinks };
