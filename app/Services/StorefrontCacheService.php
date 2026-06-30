@@ -74,7 +74,7 @@ class StorefrontCacheService
         Cache::forget('shop.catalog_meta');
         Cache::forget('shop.price_bounds');
 
-        foreach ([12, 24, 36, 48] as $perPage) {
+        foreach ([10, 12, 20, 24, 36, 48] as $perPage) {
             Cache::forget("shop.products.page1.{$perPage}");
         }
 

@@ -46,7 +46,7 @@ class DemoCatalogSeeder extends Seeder
         $colors = ['Black', 'White', 'Navy', 'Maroon'];
         $sizes = config('fashion.sizes', ['S', 'M', 'L', 'XL']);
 
-        for ($i = 1; $i <= 48; $i++) {
+        for ($i = 1; $i <= 20; $i++) {
             $name = "Demo Product {$i}";
             $regular = 800 + ($i * 75);
             $sale = $i % 4 === 0 ? $regular - 200 : null;

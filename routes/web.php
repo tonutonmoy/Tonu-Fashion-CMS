@@ -40,6 +40,7 @@ use App\Http\Controllers\Frontend\PageController as FrontendPageController;
 use App\Http\Controllers\Frontend\NewsletterController;
 use App\Http\Controllers\Frontend\OrderController;
 use App\Http\Controllers\Frontend\ProductController;
+use App\Http\Controllers\Frontend\TrackOrderController;
 use App\Http\Controllers\Frontend\ShopController;
 use App\Http\Controllers\Frontend\SupportChatController;
 use App\Http\Controllers\Frontend\WishlistController;
@@ -124,9 +125,10 @@ Route::get('/wishlist', [WishlistController::class, 'index'])->name('wishlist.in
 Route::post('/wishlist/{product}', [WishlistController::class, 'toggle'])->name('wishlist.toggle');
 Route::delete('/wishlist/{productId}', [WishlistController::class, 'destroy'])->name('wishlist.destroy');
 
-Route::redirect('/track-order', '/');
-Route::redirect('/orders', '/');
-Route::redirect('/profile', '/');
+Route::get('/track-order', [TrackOrderController::class, 'show'])->name('track-order.show');
+Route::post('/track-order', [TrackOrderController::class, 'track'])->name('track-order.track');
+Route::redirect('/orders', '/shop');
+Route::redirect('/profile', '/shop');
 
 Route::middleware('auth')->group(function () {
     Route::post('/products/{product}/reviews', [ProductController::class, 'storeReview'])->name('products.reviews.store');

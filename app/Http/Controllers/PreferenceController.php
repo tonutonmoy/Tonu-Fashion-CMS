@@ -15,7 +15,8 @@ class PreferenceController extends Controller
             abort(404);
         }
 
-        return redirect()->back()->withCookie(cookie('app_locale', $locale, 60 * 24 * 365));
+        return redirect()->to($this->safeBackUrl($request))
+            ->withCookie(cookie('app_locale', $locale, 60 * 24 * 365));
     }
 
     public function colorMode(Request $request, string $mode, ColorModeService $colorModes): RedirectResponse
@@ -24,6 +25,24 @@ class PreferenceController extends Controller
             abort(404);
         }
 
-        return redirect()->back()->withCookie(cookie('color_mode', $mode, 60 * 24 * 365));
+        return redirect()->to($this->safeBackUrl($request))
+            ->withCookie(cookie('color_mode', $mode, 60 * 24 * 365));
+    }
+
+    private function safeBackUrl(Request $request): string
+    {
+        $referer = $request->headers->get('referer');
+        $appRoot = rtrim((string) config('app.url'), '/');
+
+        if ($referer && str_starts_with($referer, $appRoot)) {
+            return $referer;
+        }
+
+        $previous = url()->previous();
+        if ($previous && $previous !== url()->current()) {
+            return $previous;
+        }
+
+        return route('shop.index');
     }
 }

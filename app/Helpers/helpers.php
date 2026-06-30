@@ -375,7 +375,7 @@ if (! function_exists('filter_storefront_menu')) {
         $collection = $items instanceof \Illuminate\Support\Collection ? $items : collect($items);
 
         $blockedTitles = ['orders', 'order', 'profile', 'login', 'register', 'track order', 'tracking', 'my account', 'account'];
-        $blockedPaths = ['/orders', '/profile', '/login', '/register', '/track-order'];
+        $blockedPaths = ['/orders', '/profile', '/login', '/register'];
 
         return $collection
             ->filter(function ($item) use ($blockedTitles, $blockedPaths) {

@@ -25,7 +25,7 @@ class HeroBuilderService
 
     public function configFromSettings(array $settings): array
     {
-        if (empty($settings['media'])) {
+        if (! array_key_exists('media', $settings)) {
             $legacy = $this->legacyMediaFromSlides();
             if (! empty($legacy)) {
                 $settings['media'] = $legacy;
@@ -168,6 +168,8 @@ class HeroBuilderService
         $this->publish->updateHomepageSection($section->id, [
             'settings' => $settings,
         ]);
+
+        $this->publish->clearHeroSlidesDraft();
 
         return $this->normalizeConfig($settings);
     }

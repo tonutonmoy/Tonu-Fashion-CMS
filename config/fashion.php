@@ -20,8 +20,8 @@ return [
         'prefer_webp' => true,
     ],
     'pagination' => [
-        'products' => 10,
-        'admin' => 10,
-        'orders' => 10,
+        'products' => 20,
+        'admin' => 20,
+        'orders' => 20,
     ],
 ];

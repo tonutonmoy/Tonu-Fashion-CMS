@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\HomepageSectionKey;
 use App\Enums\RecordStatus;
 use App\Models\BuilderDraft;
 use App\Models\FooterSetting;
@@ -88,6 +89,7 @@ class BuilderPublishService
     public function updateHomepageSection(int $id, array $data): void
     {
         $list = $this->homepageDraftList();
+        $updated = false;
 
         foreach ($list as $index => $section) {
             if ((int) $section['id'] !== $id) {
@@ -95,14 +97,35 @@ class BuilderPublishService
             }
 
             if (isset($data['settings']) && is_array($data['settings'])) {
-                $data['settings'] = array_merge($section['settings'] ?? [], $data['settings']);
+                $merged = array_merge($section['settings'] ?? [], $data['settings']);
+                if (array_key_exists('media', $data['settings'])) {
+                    $merged['media'] = $data['settings']['media'];
+                }
+                $data['settings'] = $merged;
             }
 
             $list[$index] = array_merge($section, $data);
+            $updated = true;
             break;
         }
 
+        if (! $updated) {
+            throw new \RuntimeException("Homepage section [{$id}] was not found for draft update.");
+        }
+
         $this->persistHomepageDraft($list);
+    }
+
+    public function clearHeroSlidesDraft(): void
+    {
+        $record = $this->getDraftRecord();
+
+        if (! $record || $record->hero_slides === null) {
+            return;
+        }
+
+        $record->hero_slides = null;
+        $record->save();
     }
 
     public function toggleHomepageSection(int $id, bool $enabled): void
@@ -221,7 +244,7 @@ class BuilderPublishService
             $bumpAssets = true;
         }
 
-        if ($record->hero_slides !== null) {
+        if ($record->hero_slides !== null && $this->usesLegacyHeroSlides()) {
             $this->publishHeroSlides($record->hero_slides);
             $bumpAssets = true;
         }
@@ -428,5 +451,12 @@ class BuilderPublishService
     private function getOrCreateDraftRecord(): BuilderDraft
     {
         return BuilderDraft::query()->firstOrCreate([], ['has_changes' => false]);
+    }
+
+    private function usesLegacyHeroSlides(): bool
+    {
+        $hero = $this->sections->findByKey(HomepageSectionKey::HeroSlider->value);
+
+        return ! array_key_exists('media', $hero?->settings ?? []);
     }
 }

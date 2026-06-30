@@ -46,12 +46,16 @@ class ThemeSeeder extends Seeder
                     'show_title' => true,
                     'show_subtitle' => true,
                     'show_button' => true,
-                    'media' => [[
-                        'id' => 'hero-1',
+                    'media' => collect([
+                        'https://images.unsplash.com/photo-1483985988355-763728e3685b?w=1400&q=80&auto=format',
+                        'https://images.unsplash.com/photo-1617137968427-85924c800a22?w=1400&q=80&auto=format',
+                        'https://images.unsplash.com/photo-1445205170230-053b83016050?w=1400&q=80&auto=format',
+                    ])->map(fn ($url, $i) => [
+                        'id' => 'hero-'.($i + 1),
                         'type' => 'image',
-                        'desktop_image' => 'images/placeholder-product.svg',
-                        'sort_order' => 1,
-                    ]],
+                        'desktop_image' => $url,
+                        'sort_order' => $i + 1,
+                    ])->all(),
                 ]),
             ]);
         }
