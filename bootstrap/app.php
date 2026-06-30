@@ -29,6 +29,7 @@ return Application::configure(basePath: dirname(__DIR__))
             \App\Http\Middleware\SetLocale::class,
             \App\Http\Middleware\StorefrontHtmlCacheMiddleware::class,
             \App\Http\Middleware\PerformanceProfilerMiddleware::class,
+            \App\Http\Middleware\SecurityHeadersMiddleware::class,
         ]);
 
         $middleware->alias([
